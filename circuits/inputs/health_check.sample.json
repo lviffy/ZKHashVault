@@ -1,0 +1,5 @@
+{
+  "collateralUsd": "125000",
+  "debtUsd": "61000",
+  "minCollateralRatioBps": "12000"
+}

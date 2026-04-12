@@ -8,9 +8,17 @@
     "start": "next start",
     "lint": "eslint",
     "contracts:compile": "hardhat compile",
-    "contracts:test": "hardhat test"
+    "contracts:test": "hardhat test",
+    "contracts:deploy:local": "hardhat run scripts/deploy.ts --network localhost",
+    "contracts:deploy:hashkey": "hardhat run scripts/deploy.ts --network hashkeyTestnet",
+    "zk:setup": "bash scripts/zk/setup.sh",
+    "zk:prove": "bash scripts/zk/prove.sh",
+    "zk:build-input": "node scripts/zk/build_input.js",
+    "zk:encode-payload": "node scripts/zk/encode_payload.js",
+    "zk:sync-verifier": "bash scripts/zk/sync_verifier.sh"
   },
   "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
     "next": "16.2.3",
     "react": "19.2.4",
     "react-dom": "19.2.4"
@@ -25,10 +33,12 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "chai": "^4.5.0",
+    "circomlib": "^2.0.5",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
     "ethers": "^6.16.0",
     "hardhat": "^2.28.6",
+    "snarkjs": "^0.7.5",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "^5"

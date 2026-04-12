@@ -1,5 +1,5 @@
 import { buildRebalanceInstruction, derivePolicy, validatePolicy } from "./policyEngine";
-import { executeRebalance, MockVaultExecutor } from "./executionWorker";
+import { executeRebalance, type VaultExecutor } from "./executionWorker";
 import { StrategySnapshotCache } from "./snapshotCache";
 import type { MarketSnapshot, StrategyConfig } from "./types";
 
@@ -8,8 +8,9 @@ export async function runStrategyTick(input: {
   currentPoolABps: number;
   config: StrategyConfig;
   cache: StrategySnapshotCache;
+  executor?: VaultExecutor;
 }) {
-  const policy = derivePolicy(input.snapshot);
+  const policy = derivePolicy(input.snapshot, input.currentPoolABps);
   const validation = validatePolicy(policy, input.config);
 
   if (!validation.ok) {
@@ -22,12 +23,13 @@ export async function runStrategyTick(input: {
   input.cache.setLatest(policy);
 
   const instruction = buildRebalanceInstruction(input.currentPoolABps, policy, input.config);
-  const receipt = await executeRebalance(new MockVaultExecutor(), instruction);
+  const receipt = input.executor ? await executeRebalance(input.executor, instruction) : null;
 
   return {
     ok: true,
     policy,
     instruction,
     receipt,
+    executed: receipt !== null,
   };
 }

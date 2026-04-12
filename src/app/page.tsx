@@ -1,29 +1,41 @@
 import { runPhase3CreditAndZkStep } from "../../services/strategy/src/phase3";
 import { StrategySnapshotCache } from "../../services/strategy/src/snapshotCache";
 import { runStrategyTick } from "../../services/strategy/src";
+import { EvmVaultExecutor } from "../../services/strategy/src/executionWorker";
+
+const DEMO_SNAPSHOT_TIMESTAMP = 1_776_000_000;
 
 export default async function Home() {
-  const snapshotTimestamp = 1_710_000_000_000;
+  const snapshotTimestamp = DEMO_SNAPSHOT_TIMESTAMP;
+  const executor = EvmVaultExecutor.fromEnv();
   const cache = new StrategySnapshotCache();
   const strategyResult = await runStrategyTick({
     snapshot: {
       timestamp: snapshotTimestamp,
       poolAApyBps: 1140,
       poolBApyBps: 980,
-      volatilityBps: 540,
+      volatilityBps: 4200,
+      utilizationBps: 6100,
+      estimatedSlippageBps: 35,
+      positionHealthFactorBps: 13200,
       oraclePrice: 2100,
     },
     currentPoolABps: 5000,
     config: {
       cadenceSeconds: 600,
       maxRebalanceDeltaBps: 450,
+      maxSlippageBps: 50,
+      minHealthFactorBps: 12000,
+      maxOracleAgeSeconds: 60,
+      nowTimestamp: snapshotTimestamp,
       minOraclePrice: 1200,
       maxOraclePrice: 3500,
     },
     cache,
+    executor: executor ?? undefined,
   });
 
-  const phase3 = runPhase3CreditAndZkStep({
+  const phase3 = await runPhase3CreditAndZkStep({
     walletSnapshot: {
       repaymentRatioBps: 9200,
       liquidationCount: 1,
@@ -35,6 +47,8 @@ export default async function Home() {
       debtUsd: "61000",
       liquidationThresholdBps: 7800,
     },
+    useEcdsaFallback: process.env.USE_ECDSA_PROOF_FALLBACK === "true",
+    proverPrivateKey: process.env.SAFETY_PROVER_PRIVATE_KEY,
   });
 
   return (
@@ -56,12 +70,14 @@ export default async function Home() {
             </p>
           </article>
           <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Credit Score</p>
-            <p className="mt-3 text-3xl font-semibold text-slate-900">{phase3.creditScore}</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Risk Class</p>
+            <p className="mt-3 text-3xl font-semibold text-slate-900">
+              {strategyResult.ok && strategyResult.policy ? strategyResult.policy.riskClass.toUpperCase() : "N/A"}
+            </p>
           </article>
           <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Strategy Cadence</p>
-            <p className="mt-3 text-3xl font-semibold text-slate-900">10m</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Credit Score</p>
+            <p className="mt-3 text-3xl font-semibold text-slate-900">{phase3.creditScore}</p>
           </article>
         </section>
 

@@ -37,6 +37,11 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# zk artifacts
+/circuits/powersOfTau28_hez_final_12.ptau
+/circuits/artifacts/*
+!/circuits/artifacts/.gitkeep
+
 # vercel
 .vercel
 

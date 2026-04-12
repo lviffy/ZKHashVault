@@ -12,7 +12,10 @@ contract AdaptiveVault {
     error InvalidInput();
     error InsufficientShares();
     error OracleOutOfBounds(uint64 oraclePrice);
+    error OracleStale(uint64 oracleTimestamp, uint64 currentTimestamp);
     error RebalanceTooLarge(uint256 attemptedBps, uint256 maxBps);
+    error SlippageTooHigh(uint256 attemptedBps, uint256 maxBps);
+    error HealthFactorTooLow(uint256 observedHealthFactor, uint256 minHealthFactor);
 
     struct Allocation {
         uint16 poolABps;
@@ -21,6 +24,10 @@ contract AdaptiveVault {
     }
 
     uint256 private constant BPS = 10_000;
+    uint16 public constant MAX_ALLOCATION_DELTA_BPS = 2_000;
+    uint16 public constant MAX_SLIPPAGE_BPS = 50;
+    uint64 public constant MAX_ORACLE_STALENESS_SECONDS = 60;
+    uint256 public constant MIN_HEALTH_FACTOR_WAD = 1.2e18;
 
     IERC20Like public immutable asset;
     address public owner;
@@ -31,13 +38,11 @@ contract AdaptiveVault {
 
     uint64 public oracleMinPrice;
     uint64 public oracleMaxPrice;
-    uint16 public maxRebalanceBps;
     Allocation public allocation;
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event PolicyUpdaterChanged(address indexed previousUpdater, address indexed newUpdater);
     event OracleBoundsUpdated(uint64 minPrice, uint64 maxPrice);
-    event MaxRebalanceBpsUpdated(uint16 maxRebalanceBps);
     event Deposited(address indexed user, uint256 assets, uint256 sharesMinted);
     event Withdrawn(address indexed user, uint256 sharesBurned, uint256 assetsReturned);
     event Rebalanced(
@@ -45,7 +50,10 @@ contract AdaptiveVault {
         uint16 previousPoolBBps,
         uint16 newPoolABps,
         uint16 newPoolBBps,
-        uint64 oraclePrice
+        uint64 oraclePrice,
+        uint16 slippageBps,
+        uint256 healthFactorWad,
+        uint64 oracleTimestamp
     );
 
     modifier onlyOwner() {
@@ -73,7 +81,6 @@ contract AdaptiveVault {
 
         oracleMinPrice = 1;
         oracleMaxPrice = type(uint64).max;
-        maxRebalanceBps = 2_000;
         allocation = Allocation({poolABps: 5_000, poolBBps: 5_000, lastOraclePrice: 0});
 
         emit OwnershipTransferred(address(0), msg.sender);
@@ -106,15 +113,6 @@ contract AdaptiveVault {
         oracleMinPrice = minPrice;
         oracleMaxPrice = maxPrice;
         emit OracleBoundsUpdated(minPrice, maxPrice);
-    }
-
-    function setMaxRebalanceBps(uint16 newMaxRebalanceBps) external onlyOwner {
-        if (newMaxRebalanceBps == 0 || newMaxRebalanceBps > BPS) {
-            revert InvalidInput();
-        }
-
-        maxRebalanceBps = newMaxRebalanceBps;
-        emit MaxRebalanceBpsUpdated(newMaxRebalanceBps);
     }
 
     function totalAssets() public view returns (uint256) {
@@ -174,14 +172,32 @@ contract AdaptiveVault {
         emit Withdrawn(msg.sender, sharesBurned, assetsReturned);
     }
 
-    function rebalance(int256 deltaPoolABps, uint64 oraclePrice) external onlyPolicyUpdater {
+    function rebalance(
+        int256 deltaPoolABps,
+        uint64 oraclePrice,
+        uint16 slippageBps,
+        uint256 healthFactorWad,
+        uint64 oracleTimestamp
+    ) external onlyPolicyUpdater {
         if (oraclePrice < oracleMinPrice || oraclePrice > oracleMaxPrice) {
             revert OracleOutOfBounds(oraclePrice);
         }
 
+        if (oracleTimestamp > uint64(block.timestamp) || uint64(block.timestamp) - oracleTimestamp > MAX_ORACLE_STALENESS_SECONDS) {
+            revert OracleStale(oracleTimestamp, uint64(block.timestamp));
+        }
+
+        if (slippageBps > MAX_SLIPPAGE_BPS) {
+            revert SlippageTooHigh(slippageBps, MAX_SLIPPAGE_BPS);
+        }
+
+        if (healthFactorWad < MIN_HEALTH_FACTOR_WAD) {
+            revert HealthFactorTooLow(healthFactorWad, MIN_HEALTH_FACTOR_WAD);
+        }
+
         uint256 absDelta = deltaPoolABps >= 0 ? uint256(deltaPoolABps) : uint256(-deltaPoolABps);
-        if (absDelta > maxRebalanceBps) {
-            revert RebalanceTooLarge(absDelta, maxRebalanceBps);
+        if (absDelta > MAX_ALLOCATION_DELTA_BPS) {
+            revert RebalanceTooLarge(absDelta, MAX_ALLOCATION_DELTA_BPS);
         }
 
         int256 newPoolA = int256(uint256(allocation.poolABps)) + deltaPoolABps;
@@ -196,6 +212,6 @@ contract AdaptiveVault {
 
         allocation = Allocation({poolABps: updatedPoolA, poolBBps: updatedPoolB, lastOraclePrice: oraclePrice});
 
-        emit Rebalanced(previousPoolA, previousPoolB, updatedPoolA, updatedPoolB, oraclePrice);
+        emit Rebalanced(previousPoolA, previousPoolB, updatedPoolA, updatedPoolB, oraclePrice, slippageBps, healthFactorWad, oracleTimestamp);
     }
 }
