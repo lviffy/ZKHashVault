@@ -3,10 +3,11 @@ import { StrategySnapshotCache } from "../../services/strategy/src/snapshotCache
 import { runStrategyTick } from "../../services/strategy/src";
 
 export default async function Home() {
+  const snapshotTimestamp = 1_710_000_000_000;
   const cache = new StrategySnapshotCache();
   const strategyResult = await runStrategyTick({
     snapshot: {
-      timestamp: Date.now(),
+      timestamp: snapshotTimestamp,
       poolAApyBps: 1140,
       poolBApyBps: 980,
       volatilityBps: 540,
