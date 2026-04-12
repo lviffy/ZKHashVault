@@ -1,6 +1,9 @@
 import type { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-chai-matchers";
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 const hashkeyRpcUrl = process.env.HASHKEY_RPC_URL;
 const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY;
