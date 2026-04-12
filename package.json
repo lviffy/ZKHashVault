@@ -18,9 +18,11 @@
     "zk:sync-verifier": "bash scripts/zk/sync_verifier.sh"
   },
   "dependencies": {
+    "@google/genai": "^1.49.0",
     "@openzeppelin/contracts": "^5.4.0",
     "@tanstack/react-query": "^5.99.0",
     "next": "16.2.3",
+    "openai": "^6.34.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "viem": "^2.47.12",

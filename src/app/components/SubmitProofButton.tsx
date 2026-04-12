@@ -1,6 +1,7 @@
 "use client";
 
 import { useWriteContract, useAccount } from "wagmi";
+import { useState, useEffect } from "react";
 import PositionSafetyGatewayJson from "../abi/PositionSafetyGateway.json";
 import { CONTRACT_ADDRESSES } from "../lib/contracts";
 
@@ -16,6 +17,9 @@ export function SubmitProofButton({
   const { writeContract, isPending, data } = useWriteContract();
   const { isConnected } = useAccount();
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const handleVerify = () => {
     writeContract({
       address: CONTRACT_ADDRESSES.PositionSafetyGateway,
@@ -24,6 +28,10 @@ export function SubmitProofButton({
       args: [signalHash, proofBytes],
     });
   };
+
+  if (!mounted) {
+    return <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 animate-pulse h-[52px]" />;
+  }
 
   if (!isConnected) {
     return (

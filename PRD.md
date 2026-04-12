@@ -32,7 +32,7 @@ DeFi users struggle to continuously optimize rates, collateral levels, and risk 
 
 ## 7. MVP Scope (Hackathon)
 - ERC-4626-style vault contract for deposit and withdraw.
-- Off-chain AI policy/oracle that suggests rate and allocation adjustments.
+- AI Layer: Gemini agent acts as an oracle, suggesting rate and allocation adjustments.
 - On-chain execution module for rebalance actions.
 - Basic DeFi Credit Score NFT (mock scoring model).
 - ZK proof demo: position safety proof for liquidation threshold.
@@ -56,7 +56,7 @@ DeFi users struggle to continuously optimize rates, collateral levels, and risk 
 - Smart contracts: Solidity, OpenZeppelin, Foundry.
 - ZK tooling: Circom, snarkjs, Groth16 verifier contracts.
 - Backend and agents: TypeScript (Node.js), Fastify, ethers.
-- AI and analytics: Python (scikit-learn baseline scorer), pandas.
+- AI and analytics: Google Gemini 2.0 Flash API for live, agentic allocation logic.
 - Data and indexing: The Graph (or lightweight custom indexer), Redis cache.
 - Frontend: Next.js, wagmi, viem, Tailwind CSS.
 - Infra and devops: Docker, GitHub Actions, Vercel for frontend hosting.
@@ -64,7 +64,7 @@ DeFi users struggle to continuously optimize rates, collateral levels, and risk 
 ## 11. Architecture
 - User Layer: Wallet-connected web app for deposit, withdraw, and intent input.
 - Application Layer: API service accepts intents, computes policy updates, and queues rebalance actions.
-- AI Layer: Scoring service computes wallet risk class and strategy weights from market plus portfolio features.
+- AI Layer: Gemini API agent computes strategy weights based on market and portfolio features.
 - Execution Layer: Policy executor submits signed transactions to vault and routing contracts.
 - Blockchain Layer: ERC-4626 vault, score NFT contract, and ZK verifier enforce on-chain rules.
 - Data Layer: Event indexer stores vault activity, APY snapshots, and rebalance history for dashboards.

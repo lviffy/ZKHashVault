@@ -2,11 +2,21 @@
 
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { injected } from "wagmi/connectors";
+import { useEffect, useState } from "react";
 
 export function WalletConnect() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const { address, isConnected } = useAccount();
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
+
+  if (!mounted) {
+    return (
+      <div className="h-8 w-24 bg-slate-100 animate-pulse rounded-full" />
+    );
+  }
 
   if (isConnected) {
     return (

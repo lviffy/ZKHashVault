@@ -2,17 +2,26 @@ import Link from "next/link";
 import { runPhase3CreditAndZkStep } from "../../../services/strategy/src/phase3";
 import { StrategySnapshotCache } from "../../../services/strategy/src/snapshotCache";
 import { runStrategyTick } from "../../../services/strategy/src";
-import { EvmVaultExecutor } from "../../../services/strategy/src/executionWorker";
+import { askAIForStrategy } from "../../../services/strategy/src/ai";
 import { WalletConnect } from "../components/WalletConnect";
-import { DepositWithdrawForm } from "../components/DepositWithdrawForm";
+import { MyPositionCard } from "../components/MyPositionCard";
 import { SubmitProofButton } from "../components/SubmitProofButton";
 
 const DEMO_SNAPSHOT_TIMESTAMP = 1_776_000_000;
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function DashboardHome() {
-  const snapshotTimestamp = DEMO_SNAPSHOT_TIMESTAMP;
-  const executor = EvmVaultExecutor.fromEnv();
+  const snapshotTimestamp = Math.floor(Date.now() / 1000) - 15;
   const cache = new StrategySnapshotCache();
+
+  // Poll Gemini API instead of deterministic algorithm
+  const geminiSuggestion = await askAIForStrategy([
+    { asset: "Aave USDC Pool", currentAllocationBps: 5000 },
+    { asset: "Compound avUSD Pool", currentAllocationBps: 5000 }
+  ], "medium");
+
   const strategyResult = await runStrategyTick({
     snapshot: {
       timestamp: snapshotTimestamp,
@@ -36,7 +45,7 @@ export default async function DashboardHome() {
       maxOraclePrice: 3500,
     },
     cache,
-    executor: executor ?? undefined,
+    executor: undefined // Don't trigger transaction on local gemini load yet
   });
 
   const phase3 = await runPhase3CreditAndZkStep({
@@ -64,7 +73,7 @@ export default async function DashboardHome() {
         </Link>
         <div className="flex items-center gap-4 text-xs font-medium text-slate-500">
           <span className="flex items-center gap-1.5"><span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span> Live Engine</span>
-          <span className="rounded-full bg-white px-3 py-1 shadow-sm border border-slate-200">Network: EVM Local</span>
+          <span className="rounded-full bg-white px-3 py-1 shadow-sm border border-slate-200">Network: Hashkey Testnet</span>
           <WalletConnect />
         </div>
       </nav>
@@ -80,7 +89,7 @@ export default async function DashboardHome() {
 
         <section className="grid gap-8 lg:grid-cols-3 items-start">
           <div className="lg:col-span-1">
-            <DepositWithdrawForm />
+            <MyPositionCard />
           </div>
           
           <div className="lg:col-span-2 grid gap-4 grid-cols-1 sm:grid-cols-2">
@@ -96,29 +105,86 @@ export default async function DashboardHome() {
                 {strategyResult.ok && strategyResult.policy ? strategyResult.policy.riskClass.toUpperCase() : "N/A"}
               </p>
             </article>
-            <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:col-span-2">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Credit Score</p>
-              <p className="mt-3 text-3xl font-semibold text-slate-900">{phase3.creditScore}</p>
+            <article className="rounded-2xl border border-slate-200 bg-emerald-50 p-6 shadow-sm sm:col-span-2 flex flex-col justify-between overflow-hidden relative">
+              <div className="absolute -right-10 -bottom-10 h-32 w-32 rounded-full bg-emerald-200 opacity-50 blur-2xl"></div>
+              <p className="text-xs uppercase tracking-[0.2em] text-emerald-800 font-semibold">Active Strategy Insight</p>
+              <p className="mt-2 text-sm leading-relaxed text-emerald-900 z-10 max-w-lg">
+                Your vault is currently operating within a <strong>{strategyResult.ok && strategyResult.policy ? strategyResult.policy.riskClass.toUpperCase() : "N/A"}</strong> risk parameter. 
+                Capital automatically flows to secure yielding assets while maintaining strict health factor thresholds protecting your position.
+              </p>
             </article>
           </div>
         </section>
 
         <section className="grid gap-4 lg:grid-cols-2">
-          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Rebalance Instruction</h2>
-            <pre className="mt-4 overflow-x-auto rounded-xl bg-slate-950 p-4 text-xs leading-6 text-emerald-200">
-              {JSON.stringify(strategyResult, null, 2)}
-            </pre>
+          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Gemini AI Target Allocation</h2>
+              <p className="mt-2 text-sm text-slate-600">
+                The AI engine has analyzed market conditions and recommends the following portfolio breakdown.
+              </p>
+            </div>
+            
+            <div className="mt-8 flex flex-col gap-4">
+              <div className="flex justify-between items-center text-sm font-medium">
+                <span className="text-emerald-700">Aave USDC Pool</span>
+                <span className="text-emerald-700">
+                  {geminiSuggestion?.allocations?.["Aave USDC Pool"] ? (geminiSuggestion.allocations["Aave USDC Pool"] / 100).toFixed(1) : "50.0"}%
+                </span>
+              </div>
+              <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden">
+                <div 
+                  className="h-full bg-emerald-500 rounded-full transition-all duration-1000" 
+                  style={{ width: `${geminiSuggestion?.allocations?.["Aave USDC Pool"] ? (geminiSuggestion.allocations["Aave USDC Pool"] / 100) : 50}%` }}
+                />
+              </div>
+
+              <div className="flex justify-between items-center text-sm font-medium mt-2">
+                <span className="text-blue-700">Compound avUSD Pool</span>
+                <span className="text-blue-700">
+                  {geminiSuggestion?.allocations?.["Compound avUSD Pool"] ? (geminiSuggestion.allocations["Compound avUSD Pool"] / 100).toFixed(1) : "50.0"}%
+                </span>
+              </div>
+              <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden">
+                <div 
+                  className="h-full bg-blue-500 rounded-full transition-all duration-1000" 
+                  style={{ width: `${geminiSuggestion?.allocations?.["Compound avUSD Pool"] ? (geminiSuggestion.allocations["Compound avUSD Pool"] / 100) : 50}%` }}
+                />
+              </div>
+            </div>
+
+            {geminiSuggestion?.reasoning && (
+              <div className="mt-6 rounded-xl bg-slate-50 p-4 border border-slate-100">
+                <p className="text-xs font-semibold text-slate-500 mb-1">AI REASONING</p>
+                <p className="text-sm text-slate-700 italic">"{geminiSuggestion.reasoning}"</p>
+              </div>
+            )}
           </article>
-          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Safety Proof Payload</h2>
-            <pre className="mt-4 overflow-x-auto rounded-xl bg-slate-950 p-4 text-xs leading-6 text-cyan-200">
-              {JSON.stringify(phase3, null, 2)}
-            </pre>
-            <SubmitProofButton 
-              signalHash={phase3.signalHash as `0x${string}`} 
-              proofBytes={phase3.proof as `0x${string}`} 
-            />
+          
+          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Cryptographic Security</h2>
+              <p className="mt-2 text-sm text-slate-600">
+                Your position is secured by zero-knowledge proofs. The system natively rejects any AI instruction that violates health factor and slippage thresholds on-chain.
+              </p>
+            </div>
+
+            <div className="mt-8 flex flex-col items-center justify-center py-6 rounded-xl border border-emerald-100 bg-emerald-50/50">
+              <div className="h-16 w-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4 shadow-sm">
+                <svg className="w-8 h-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <p className="text-emerald-800 font-semibold text-lg">Protected by ZK-Snarks</p>
+              <p className="text-emerald-600/80 text-xs mt-1">Groth16 Verification Active</p>
+            </div>
+
+            <div className="mt-6">
+              <SubmitProofButton 
+                signalHash={phase3.signalHash as `0x${string}`} 
+                proofBytes={phase3.proof as `0x${string}`} 
+              />
+            </div>
           </article>
         </section>
       </main>

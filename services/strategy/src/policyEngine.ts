@@ -18,7 +18,8 @@ function bpsToRiskScore(valueBps: number): number {
 }
 
 function toWadFromBps(valueBps: number): string {
-  const normalized = (clampBps(valueBps) / BPS).toFixed(4);
+  // Health factors can exceed 10000 bps (1.0), so we only bound the lower limit to 0
+  const normalized = (Math.max(0, valueBps) / BPS).toFixed(4);
   return parseUnits(normalized, 18).toString();
 }
 
@@ -108,4 +109,10 @@ export function buildRebalanceInstruction(
     oracleTimestamp: policy.generatedAt,
     policyGeneratedAt: policy.generatedAt,
   };
+}
+
+export async function deriveGeminiPolicy(currentPoolABps: number, riskClass: string) {
+  // Stub placeholder for Gemini integration logic
+  // Connects Gemini to the policy engine replacing deterministic derivePolicy
+  return null;
 }

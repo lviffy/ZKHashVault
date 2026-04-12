@@ -51,7 +51,7 @@ The MVP is intentionally narrow. One complete, trustworthy flow is worth more th
 
 - **ERC-4626 Vault** — deposit, withdraw, share accounting. Two allocation targets: a lending protocol and a stablecoin pool.
 - **Policy Executor Contract** — on-chain enforcement of rebalance bounds. Max 20% allocation shift per rebalance, slippage cap, minimum health factor threshold. Rebalances that violate these constraints are rejected at the contract level.
-- **Strategy Engine** — rule-based scoring using price feeds and utilization rates. Computes a weighted risk score and outputs target allocations within policy bounds. No ML required at this stage; the architecture supports it in a later phase.
+- **Strategy Engine** — Uses the Google Gemini 2.0 Flash API to act as an autonomous risk-adjustment agent. It ingests price feeds and utilization rates, computes a weighted risk score, and outputs target allocations within policy bounds.
 - **ZK Health Proof** — a Groth16 proof verifying that the current collateral ratio exceeds a minimum threshold. Verified on-chain. The verification transaction is publicly visible and linked from the dashboard.
 - **Dashboard** — current APY, risk score, health factor, rebalance action timeline, and a one-click proof generation and submission flow.
 

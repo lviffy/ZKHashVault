@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { parseUnits, formatUnits } from "viem";
 import { CONTRACT_ADDRESSES, AdaptiveVaultAbi, VaultAssetTokenAbi } from "../lib/contracts";
 
 export function DepositWithdrawForm() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const { address } = useAccount();
   const [amount, setAmount] = useState("");
   const [tab, setTab] = useState<"deposit" | "withdraw">("deposit");
@@ -60,7 +63,7 @@ export function DepositWithdrawForm() {
           address: CONTRACT_ADDRESSES.AdaptiveVault,
           abi: AdaptiveVaultAbi,
           functionName: "deposit",
-          args: [amountWei, address],
+          args: [amountWei],
         });
       }
     } else {
@@ -68,10 +71,18 @@ export function DepositWithdrawForm() {
         address: CONTRACT_ADDRESSES.AdaptiveVault,
         abi: AdaptiveVaultAbi,
         functionName: "withdraw",
-        args: [amountWei, address, address],
+        args: [amountWei],
       });
     }
   };
+
+  if (!mounted) {
+    return (
+      <article className="rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm flex flex-col gap-4 animate-pulse h-[300px]">
+        {/* Loading skeleton to prevent hydration mismatch */}
+      </article>
+    );
+  }
 
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col gap-4">
@@ -121,10 +132,10 @@ export function DepositWithdrawForm() {
 
       <button
         onClick={handleAction}
-        disabled={!address || !amount || parseFloat(amount) <= 0}
+        disabled={!mounted || !address || !amount || parseFloat(amount) <= 0}
         className="mt-2 w-full rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:bg-slate-300 disabled:text-slate-500 transition-colors"
       >
-        {!address
+        {!mounted || !address
           ? "Connect Wallet First"
           : tab === "deposit"
           ? !isApproved

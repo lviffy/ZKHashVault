@@ -1,0 +1,7 @@
+{
+  "allocations": {
+    "Aave USDC Pool": 6500,
+    "Compound avUSD Pool": 3500
+  },
+  "reasoning": "Market volatility is elevated. Shifting weight towards Compound avUSD to lock in stable yield while reducing exposure to Aave rate drops."
+}
