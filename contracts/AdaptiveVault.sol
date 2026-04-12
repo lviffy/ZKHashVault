@@ -7,6 +7,10 @@ interface IERC20Like {
     function balanceOf(address account) external view returns (uint256);
 }
 
+interface IPositionSafetyGateway {
+    function verifyPositionSafety(bytes32 signalHash, bytes calldata proof) external returns (bool);
+}
+
 contract AdaptiveVault {
     error Unauthorized();
     error InvalidInput();
@@ -30,6 +34,7 @@ contract AdaptiveVault {
     uint256 public constant MIN_HEALTH_FACTOR_WAD = 1.2e18;
 
     IERC20Like public immutable asset;
+    address public immutable safetyGateway;
     address public owner;
     address public policyUpdater;
 
@@ -70,14 +75,15 @@ contract AdaptiveVault {
         _;
     }
 
-    constructor(address assetAddress, address initialPolicyUpdater) {
-        if (assetAddress == address(0)) {
+    constructor(address assetAddress, address initialPolicyUpdater, address gatewayAddress) {
+        if (assetAddress == address(0) || gatewayAddress == address(0)) {
             revert InvalidInput();
         }
 
         owner = msg.sender;
         policyUpdater = initialPolicyUpdater == address(0) ? msg.sender : initialPolicyUpdater;
         asset = IERC20Like(assetAddress);
+        safetyGateway = gatewayAddress;
 
         oracleMinPrice = 1;
         oracleMaxPrice = type(uint64).max;
@@ -177,8 +183,11 @@ contract AdaptiveVault {
         uint64 oraclePrice,
         uint16 slippageBps,
         uint256 healthFactorWad,
-        uint64 oracleTimestamp
+        uint64 oracleTimestamp,
+        bytes32 signalHash,
+        bytes calldata proof
     ) external onlyPolicyUpdater {
+        IPositionSafetyGateway(safetyGateway).verifyPositionSafety(signalHash, proof);
         if (oraclePrice < oracleMinPrice || oraclePrice > oracleMaxPrice) {
             revert OracleOutOfBounds(oraclePrice);
         }

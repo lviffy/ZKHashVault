@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAccount, useReadContract, useWriteContract } from "wagmi";
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { parseUnits, formatUnits } from "viem";
 import { CONTRACT_ADDRESSES, AdaptiveVaultAbi, VaultAssetTokenAbi, CreditScorePassportAbi } from "../lib/contracts";
 
@@ -15,8 +15,18 @@ export function MyPositionCard() {
 
   const amountWei = amount ? parseUnits(amount, 18) : 0n;
 
-  // Reads
-  const { data: userAssetBalance } = useReadContract({
+  // Writes
+  const { writeContract: writeApprove, isPending: isApproving, data: approveTx } = useWriteContract();
+  const { writeContract: writeDeposit, isPending: isDepositing, data: depositTx } = useWriteContract();
+  const { writeContract: writeWithdraw, isPending: isWithdrawing, data: withdrawTx } = useWriteContract();
+
+  // Watch for transaction completion to refetch read data
+  const { isLoading: isDepositConfirming, isSuccess: isDepositSuccess } = useWaitForTransactionReceipt({ hash: depositTx });
+  const { isLoading: isWithdrawConfirming, isSuccess: isWithdrawSuccess } = useWaitForTransactionReceipt({ hash: withdrawTx });
+  const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({ hash: approveTx });
+
+  // Add refetch functions
+  const { data: userAssetBalance, refetch: refetchAssetBalance } = useReadContract({
     address: CONTRACT_ADDRESSES.VaultAssetToken,
     abi: VaultAssetTokenAbi,
     functionName: "balanceOf",
@@ -24,7 +34,7 @@ export function MyPositionCard() {
     query: { enabled: !!address },
   });
 
-  const { data: userVaultBalance } = useReadContract({
+  const { data: userVaultBalance, refetch: refetchVaultBalance } = useReadContract({
     address: CONTRACT_ADDRESSES.AdaptiveVault,
     abi: AdaptiveVaultAbi,
     functionName: "shareBalance",
@@ -32,13 +42,27 @@ export function MyPositionCard() {
     query: { enabled: !!address },
   });
 
-  const { data: allowance } = useReadContract({
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({
     address: CONTRACT_ADDRESSES.VaultAssetToken,
     abi: VaultAssetTokenAbi,
     functionName: "allowance",
     args: address ? [address, CONTRACT_ADDRESSES.AdaptiveVault] : undefined,
     query: { enabled: !!address },
   });
+
+  // Automatically refetch when the transaction completes
+  useEffect(() => {
+    if (isDepositSuccess || isWithdrawSuccess || isApproveSuccess) {
+      refetchAssetBalance();
+      refetchVaultBalance();
+      refetchAllowance();
+      
+      // Only clear the input field if it was an actual deposit/withdraw, NOT just an approval step
+      if (isDepositSuccess || isWithdrawSuccess) {
+        setAmount(""); 
+      }
+    }
+  }, [isDepositSuccess, isWithdrawSuccess, isApproveSuccess, refetchAssetBalance, refetchVaultBalance, refetchAllowance]);
 
   const { data: tokenId } = useReadContract({
     address: CONTRACT_ADDRESSES.CreditScorePassport,
@@ -55,11 +79,6 @@ export function MyPositionCard() {
     args: tokenId ? [tokenId as bigint] : undefined,
     query: { enabled: !!tokenId },
   });
-
-  // Writes
-  const { writeContract: writeApprove, isPending: isApproving } = useWriteContract();
-  const { writeContract: writeDeposit, isPending: isDepositing } = useWriteContract();
-  const { writeContract: writeWithdraw, isPending: isWithdrawing } = useWriteContract();
 
   const isApproved = (allowance as bigint) >= amountWei;
   
@@ -100,7 +119,7 @@ export function MyPositionCard() {
     }
   };
 
-  const isTxPending = isApproving || isDepositing || isWithdrawing;
+  const isTxPending = isApproving || isDepositing || isWithdrawing || isDepositConfirming || isWithdrawConfirming || isApproveConfirming;
 
   if (!mounted) {
     return <article className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm animate-pulse h-[400px]"></article>;

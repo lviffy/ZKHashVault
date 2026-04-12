@@ -10,6 +10,11 @@
         "internalType": "address",
         "name": "initialPolicyUpdater",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "gatewayAddress",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
@@ -452,11 +457,34 @@
         "internalType": "uint64",
         "name": "oracleTimestamp",
         "type": "uint64"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "signalHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes",
+        "name": "proof",
+        "type": "bytes"
       }
     ],
     "name": "rebalance",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "safetyGateway",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

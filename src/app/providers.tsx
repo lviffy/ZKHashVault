@@ -20,7 +20,7 @@ export const hashkeyTestnet = defineChain({
     public: { http: ['https://hashkey-chain-testnet.rpc.thirdweb.com'] },
   },
   blockExplorers: {
-    default: { name: 'HashKey Explorer', url: 'https://hashkey.blockscout.com' },
+    default: { name: 'HashKey Testnet Explorer', url: 'https://testnet-explorer.hsk.xyz' },
   },
 })
 

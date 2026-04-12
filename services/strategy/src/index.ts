@@ -9,6 +9,8 @@ export async function runStrategyTick(input: {
   config: StrategyConfig;
   cache: StrategySnapshotCache;
   executor?: VaultExecutor;
+  signalHash?: string;
+  proof?: string;
 }) {
   const policy = derivePolicy(input.snapshot, input.currentPoolABps);
   const validation = validatePolicy(policy, input.config);
@@ -23,7 +25,10 @@ export async function runStrategyTick(input: {
   input.cache.setLatest(policy);
 
   const instruction = buildRebalanceInstruction(input.currentPoolABps, policy, input.config);
-  const receipt = input.executor ? await executeRebalance(input.executor, instruction) : null;
+  let receipt = null;
+  if (input.executor && input.signalHash && input.proof) {
+    receipt = await executeRebalance(input.executor, instruction, input.signalHash, input.proof);
+  }
 
   return {
     ok: true,

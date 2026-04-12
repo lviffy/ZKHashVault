@@ -46,10 +46,6 @@ async function main() {
     await mintTx.wait();
   }
 
-  const vaultFactory = await hre.ethers.getContractFactory("AdaptiveVault");
-  const vault = await vaultFactory.deploy(await token.getAddress(), policyUpdater);
-  await vault.waitForDeployment();
-
   const ecdsaVerifierFactory = await hre.ethers.getContractFactory("SafetyProofVerifier");
   const ecdsaVerifier = await ecdsaVerifierFactory.deploy(proofSigner, deployer.address);
   await ecdsaVerifier.waitForDeployment();
@@ -65,6 +61,10 @@ async function main() {
   const gatewayFactory = await hre.ethers.getContractFactory("PositionSafetyGateway");
   const gateway = await gatewayFactory.deploy(await groth16Adapter.getAddress());
   await gateway.waitForDeployment();
+
+  const vaultFactory = await hre.ethers.getContractFactory("AdaptiveVault");
+  const vault = await vaultFactory.deploy(await token.getAddress(), policyUpdater, await gateway.getAddress());
+  await vault.waitForDeployment();
 
   const passportFactory = await hre.ethers.getContractFactory("CreditScorePassport");
   const passport = await passportFactory.deploy(passportOwner);

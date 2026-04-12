@@ -1,7 +1,7 @@
 {
   "chainId": 133,
   "network": "hashkeyTestnet",
-  "deployedAt": "2026-04-12T19:30:00.892Z",
+  "deployedAt": "2026-04-12T21:59:21.852Z",
   "deployer": "0xd5DB28C488747BEC4F588D4Ed9E521080295c12d",
   "configuration": {
     "policyUpdater": "0xd5DB28C488747BEC4F588D4Ed9E521080295c12d",
@@ -10,12 +10,12 @@
     "initialMintWei": "1000000000000000000000000"
   },
   "contracts": {
-    "vaultAssetToken": "0x5a1Ac72142213da994938901c096089CA1130F85",
-    "adaptiveVault": "0x2bD4E4540232f4013a2D4445aD2A9F7997b302c0",
-    "healthCheckGroth16Verifier": "0xd1088c4B3b7F49182ed19D5c25F615b7AF11B963",
-    "groth16SafetyProofVerifier": "0x12cc7DF520Daea66d54dD56d4c3Fdf01cc6Ce162",
-    "safetyProofVerifierEcdsa": "0xac697A8350dB18DE094dec612CE7eD47751c1DDd",
-    "positionSafetyGateway": "0xBAeb83d4bf598697f15d9f97d62b4379095f7Ec8",
-    "creditScorePassport": "0x7F9e4c28A88ab353281bA2f030C796767Faa1a43"
+    "vaultAssetToken": "0x258C11379702E29f67D583e1f962f4b492F83150",
+    "adaptiveVault": "0xb486Ea367F47D88067FB2f88525cca9c872052AE",
+    "healthCheckGroth16Verifier": "0xf43Fe6577aC5969bBa952Fedc3adc40996c21999",
+    "groth16SafetyProofVerifier": "0x2303CC6a8eb1e048eCF53a66edF12CacE8E8CdFA",
+    "safetyProofVerifierEcdsa": "0xfDCb8f69316D1b8686067EDc794b34113dC01Acc",
+    "positionSafetyGateway": "0xd56141A0e8A9c234156061806b0a0BC9b1031f57",
+    "creditScorePassport": "0x37E933a96BE995C440826D7A4A8698911f151aCc"
   }
 }

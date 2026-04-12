@@ -6,6 +6,7 @@ import { askAIForStrategy } from "../../../services/strategy/src/ai";
 import { WalletConnect } from "../components/WalletConnect";
 import { MyPositionCard } from "../components/MyPositionCard";
 import { SubmitProofButton } from "../components/SubmitProofButton";
+import { RebalanceHistory } from "../components/RebalanceHistory";
 
 const DEMO_SNAPSHOT_TIMESTAMP = 1_776_000_000;
 
@@ -184,6 +185,11 @@ export default async function DashboardHome() {
                 signalHash={phase3.signalHash as `0x${string}`} 
                 proofBytes={phase3.proof as `0x${string}`} 
               />
+            </div>
+            
+            <div className="mt-8 border-t border-slate-100 pt-6">
+              <h3 className="text-xs uppercase tracking-[0.22em] text-slate-500 font-semibold mb-4">On-Chain Rebalance History</h3>
+              <RebalanceHistory />
             </div>
           </article>
         </section>

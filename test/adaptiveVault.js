@@ -8,17 +8,23 @@ describe("Phase 1: AdaptiveVault", function () {
   }
 
   async function deployFixture() {
-    const [owner, policyUpdater, user, outsider] = await ethers.getSigners();
+    const [owner, policyUpdater, user, outsider, proofSigner] = await ethers.getSigners();
 
     const TokenFactory = await ethers.getContractFactory("VaultAssetToken");
     const token = await TokenFactory.deploy(owner.address);
 
+    const VerifierFactory = await ethers.getContractFactory("SafetyProofVerifier");
+    const verifier = await VerifierFactory.deploy(proofSigner.address, owner.address);
+
+    const GatewayFactory = await ethers.getContractFactory("PositionSafetyGateway");
+    const gateway = await GatewayFactory.deploy(await verifier.getAddress());
+
     const VaultFactory = await ethers.getContractFactory("AdaptiveVault");
-    const vault = await VaultFactory.deploy(await token.getAddress(), policyUpdater.address);
+    const vault = await VaultFactory.deploy(await token.getAddress(), policyUpdater.address, await gateway.getAddress());
 
     await token.connect(owner).mint(user.address, ethers.parseEther("1000"));
 
-    return { owner, policyUpdater, user, outsider, token, vault };
+    return { owner, policyUpdater, user, outsider, proofSigner, token, vault, gateway };
   }
 
   it("handles deposit and withdraw flow", async function () {
@@ -46,39 +52,48 @@ describe("Phase 1: AdaptiveVault", function () {
   });
 
   it("enforces rebalance guardrails and oracle checks", async function () {
-    const { policyUpdater, vault } = await deployFixture();
+    const { policyUpdater, vault, proofSigner, gateway } = await deployFixture();
     const oracleTimestamp = await latestBlockTimestamp();
 
     await vault.setOracleBounds(1000, 3000);
 
-    await expect(vault.connect(policyUpdater).rebalance(250, 2000, 25, ethers.parseUnits("1.3", 18), oracleTimestamp))
+    const signalHash = ethers.keccak256(ethers.toUtf8Bytes("dummy-signal"));
+    const proof = await proofSigner.signMessage(ethers.getBytes(signalHash));
+
+    await expect(vault.connect(policyUpdater).rebalance(250, 2000, 25, ethers.parseUnits("1.3", 18), oracleTimestamp, signalHash, proof))
       .to.emit(vault, "Rebalanced")
       .withArgs(5000, 5000, 5250, 4750, 2000, 25, ethers.parseUnits("1.3", 18), oracleTimestamp);
 
-    await expect(vault.connect(policyUpdater).rebalance(100, 999, 20, ethers.parseUnits("1.3", 18), oracleTimestamp))
+    await expect(vault.connect(policyUpdater).rebalance(100, 999, 20, ethers.parseUnits("1.3", 18), oracleTimestamp, signalHash, proof))
       .to.be.revertedWithCustomError(vault, "OracleOutOfBounds")
       .withArgs(999);
 
-    await expect(vault.connect(policyUpdater).rebalance(2200, 2000, 20, ethers.parseUnits("1.3", 18), oracleTimestamp))
+    await expect(vault.connect(policyUpdater).rebalance(2200, 2000, 20, ethers.parseUnits("1.3", 18), oracleTimestamp, signalHash, proof))
       .to.be.revertedWithCustomError(vault, "RebalanceTooLarge")
       .withArgs(2200, 2000);
 
-    await expect(vault.connect(policyUpdater).rebalance(100, 2000, 60, ethers.parseUnits("1.3", 18), oracleTimestamp))
+    await expect(vault.connect(policyUpdater).rebalance(100, 2000, 60, ethers.parseUnits("1.3", 18), oracleTimestamp, signalHash, proof))
       .to.be.revertedWithCustomError(vault, "SlippageTooHigh")
       .withArgs(60, 50);
 
-    await expect(vault.connect(policyUpdater).rebalance(100, 2000, 30, ethers.parseUnits("1.1", 18), oracleTimestamp))
+    await expect(vault.connect(policyUpdater).rebalance(100, 2000, 30, ethers.parseUnits("1.1", 18), oracleTimestamp, signalHash, proof))
       .to.be.revertedWithCustomError(vault, "HealthFactorTooLow")
       .withArgs(ethers.parseUnits("1.1", 18), ethers.parseUnits("1.2", 18));
 
-    await expect(vault.connect(policyUpdater).rebalance(100, 2000, 20, ethers.parseUnits("1.3", 18), 1))
+    await expect(vault.connect(policyUpdater).rebalance(100, 2000, 20, ethers.parseUnits("1.3", 18), 1, signalHash, proof))
       .to.be.revertedWithCustomError(vault, "OracleStale");
+
+    const badProof = await proofSigner.signMessage(ethers.getBytes(ethers.keccak256(ethers.toUtf8Bytes("wrong"))));
+    await expect(vault.connect(policyUpdater).rebalance(250, 2000, 25, ethers.parseUnits("1.3", 18), oracleTimestamp, signalHash, badProof))
+      .to.be.revertedWithCustomError(gateway, "ProofRejected");
   });
 
   it("restricts policy updater role", async function () {
-    const { outsider, vault } = await deployFixture();
+    const { outsider, vault, proofSigner } = await deployFixture();
     const oracleTimestamp = await latestBlockTimestamp();
+    const signalHash = ethers.keccak256(ethers.toUtf8Bytes("dummy-signal"));
+    const proof = await proofSigner.signMessage(ethers.getBytes(signalHash));
 
-    await expect(vault.connect(outsider).rebalance(100, 2000, 20, ethers.parseUnits("1.3", 18), oracleTimestamp)).to.be.revertedWithCustomError(vault, "Unauthorized");
+    await expect(vault.connect(outsider).rebalance(100, 2000, 20, ethers.parseUnits("1.3", 18), oracleTimestamp, signalHash, proof)).to.be.revertedWithCustomError(vault, "Unauthorized");
   });
 });

@@ -4,10 +4,10 @@ import CreditScorePassportJson from "../abi/CreditScorePassport.json";
 
 // Default local addresses from hardhat fallback
 export const CONTRACT_ADDRESSES = {
-  VaultAssetToken: "0x5a1Ac72142213da994938901c096089CA1130F85" as const,
-  AdaptiveVault: "0x2bD4E4540232f4013a2D4445aD2A9F7997b302c0" as const,
-  PositionSafetyGateway: "0xBAeb83d4bf598697f15d9f97d62b4379095f7Ec8" as const,
-  CreditScorePassport: "0x7F9e4c28A88ab353281bA2f030C796767Faa1a43" as const,
+  VaultAssetToken: "0x258C11379702E29f67D583e1f962f4b492F83150" as const,
+  AdaptiveVault: "0xb486Ea367F47D88067FB2f88525cca9c872052AE" as const,
+  PositionSafetyGateway: "0xd56141A0e8A9c234156061806b0a0BC9b1031f57" as const,
+  CreditScorePassport: "0x37E933a96BE995C440826D7A4A8698911f151aCc" as const,
 };
 
 export const AdaptiveVaultAbi = AdaptiveVaultJson.abi;
