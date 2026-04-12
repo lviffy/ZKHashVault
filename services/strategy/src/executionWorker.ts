@@ -2,16 +2,14 @@ import { Contract, JsonRpcProvider, Wallet } from "ethers";
 import type { RebalanceInstruction } from "./types";
 
 const ADAPTIVE_VAULT_ABI = [
-  "function rebalance(int256 deltaPoolABps, uint64 oraclePrice, uint16 slippageBps, uint256 healthFactorWad, uint64 oracleTimestamp, bytes32 signalHash, bytes calldata proof) external",
+  "function rebalance(int256 deltaPoolABps, uint16 slippageBps, uint256 healthFactorWad, bytes32 signalHash, bytes calldata proof) external",
 ] as const;
 
 export interface VaultExecutor {
   submitRebalance(
     deltaPoolABps: number,
-    oraclePrice: number,
     slippageBps: number,
     healthFactorWad: string,
-    oracleTimestamp: number,
     signalHash: string,
     proof: string
   ): Promise<string>;
@@ -44,19 +42,15 @@ export class EvmVaultExecutor implements VaultExecutor {
 
   async submitRebalance(
     deltaPoolABps: number,
-    oraclePrice: number,
     slippageBps: number,
     healthFactorWad: string,
-    oracleTimestamp: number,
     signalHash: string,
     proof: string
   ): Promise<string> {
     const tx = await this.vault.rebalance(
       deltaPoolABps,
-      oraclePrice,
       slippageBps,
       healthFactorWad,
-      oracleTimestamp,
       signalHash,
       proof
     );
@@ -72,10 +66,8 @@ export async function executeRebalance(
 ): Promise<{ txHash: string; queuedAt: number }> {
   const txHash = await executor.submitRebalance(
     instruction.deltaPoolABps,
-    instruction.oraclePrice,
     instruction.slippageBps,
     instruction.healthFactorWad,
-    instruction.oracleTimestamp,
     signalHash,
     proof
   );

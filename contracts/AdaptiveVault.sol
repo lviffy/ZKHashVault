@@ -4,11 +4,25 @@ pragma solidity ^0.8.24;
 interface IERC20Like {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
     function transfer(address to, uint256 amount) external returns (bool);
+    function approve(address spender, uint256 amount) external returns (bool);
     function balanceOf(address account) external view returns (uint256);
 }
 
 interface IPositionSafetyGateway {
     function verifyPositionSafety(bytes32 signalHash, bytes calldata proof) external returns (bool);
+}
+
+interface AggregatorV3Interface {
+    function latestRoundData()
+        external
+        view
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
+}
+
+interface IMockLendingPool {
+    function deposit(uint256 amount) external;
+    function withdraw(uint256 amount) external;
+    function getBalance(address user) external view returns (uint256);
 }
 
 contract AdaptiveVault {
@@ -35,6 +49,9 @@ contract AdaptiveVault {
 
     IERC20Like public immutable asset;
     address public immutable safetyGateway;
+    AggregatorV3Interface public immutable priceFeed;
+    IMockLendingPool public immutable poolA;
+    IMockLendingPool public immutable poolB;
     address public owner;
     address public policyUpdater;
 
@@ -75,8 +92,21 @@ contract AdaptiveVault {
         _;
     }
 
-    constructor(address assetAddress, address initialPolicyUpdater, address gatewayAddress) {
-        if (assetAddress == address(0) || gatewayAddress == address(0)) {
+    constructor(
+        address assetAddress,
+        address initialPolicyUpdater,
+        address gatewayAddress,
+        address priceFeedAddress,
+        address poolAAddress,
+        address poolBAddress
+    ) {
+        if (
+            assetAddress == address(0) ||
+            gatewayAddress == address(0) ||
+            priceFeedAddress == address(0) ||
+            poolAAddress == address(0) ||
+            poolBAddress == address(0)
+        ) {
             revert InvalidInput();
         }
 
@@ -84,6 +114,12 @@ contract AdaptiveVault {
         policyUpdater = initialPolicyUpdater == address(0) ? msg.sender : initialPolicyUpdater;
         asset = IERC20Like(assetAddress);
         safetyGateway = gatewayAddress;
+        priceFeed = AggregatorV3Interface(priceFeedAddress);
+        poolA = IMockLendingPool(poolAAddress);
+        poolB = IMockLendingPool(poolBAddress);
+
+        asset.approve(poolAAddress, type(uint256).max);
+        asset.approve(poolBAddress, type(uint256).max);
 
         oracleMinPrice = 1;
         oracleMaxPrice = type(uint64).max;
@@ -122,7 +158,7 @@ contract AdaptiveVault {
     }
 
     function totalAssets() public view returns (uint256) {
-        return asset.balanceOf(address(this));
+        return asset.balanceOf(address(this)) + poolA.getBalance(address(this)) + poolB.getBalance(address(this));
     }
 
     function deposit(uint256 assets) external returns (uint256 sharesMinted) {
@@ -145,6 +181,12 @@ contract AdaptiveVault {
         if (!transferred) {
             revert InvalidInput();
         }
+
+        uint256 amountA = (assets * allocation.poolABps) / BPS;
+        uint256 amountB = assets - amountA;
+        
+        if (amountA > 0) poolA.deposit(amountA);
+        if (amountB > 0) poolB.deposit(amountB);
 
         totalShares += sharesMinted;
         shareBalance[msg.sender] += sharesMinted;
@@ -170,6 +212,12 @@ contract AdaptiveVault {
         shareBalance[msg.sender] = userShares - sharesBurned;
         totalShares -= sharesBurned;
 
+        uint256 amountToWithdrawA = (assetsReturned * allocation.poolABps) / BPS;
+        uint256 amountToWithdrawB = assetsReturned - amountToWithdrawA;
+
+        if (amountToWithdrawA > 0) poolA.withdraw(amountToWithdrawA);
+        if (amountToWithdrawB > 0) poolB.withdraw(amountToWithdrawB);
+
         bool transferred = asset.transfer(msg.sender, assetsReturned);
         if (!transferred) {
             revert InvalidInput();
@@ -180,14 +228,18 @@ contract AdaptiveVault {
 
     function rebalance(
         int256 deltaPoolABps,
-        uint64 oraclePrice,
         uint16 slippageBps,
         uint256 healthFactorWad,
-        uint64 oracleTimestamp,
         bytes32 signalHash,
         bytes calldata proof
     ) external onlyPolicyUpdater {
         IPositionSafetyGateway(safetyGateway).verifyPositionSafety(signalHash, proof);
+
+        (, int256 answer, , uint256 updatedAt, ) = priceFeed.latestRoundData();
+        if (answer <= 0) revert InvalidInput();
+
+        uint64 oraclePrice = uint64(uint256(answer));
+        uint64 oracleTimestamp = uint64(updatedAt);
         if (oraclePrice < oracleMinPrice || oraclePrice > oracleMaxPrice) {
             revert OracleOutOfBounds(oraclePrice);
         }
@@ -220,6 +272,25 @@ contract AdaptiveVault {
         uint16 updatedPoolB = uint16(BPS - updatedPoolA);
 
         allocation = Allocation({poolABps: updatedPoolA, poolBBps: updatedPoolB, lastOraclePrice: oraclePrice});
+
+        uint256 currentA = poolA.getBalance(address(this));
+        uint256 currentB = poolB.getBalance(address(this));
+        uint256 currentTotal = currentA + currentB + asset.balanceOf(address(this));
+
+        uint256 targetA = (currentTotal * updatedPoolA) / BPS;
+        uint256 targetB = currentTotal - targetA;
+
+        if (currentA > targetA) {
+            poolA.withdraw(currentA - targetA);
+        } else if (currentA < targetA) {
+            poolA.deposit(targetA - currentA);
+        }
+
+        if (currentB > targetB) {
+            poolB.withdraw(currentB - targetB);
+        } else if (currentB < targetB) {
+            poolB.deposit(targetB - currentB);
+        }
 
         emit Rebalanced(previousPoolA, previousPoolB, updatedPoolA, updatedPoolB, oraclePrice, slippageBps, healthFactorWad, oracleTimestamp);
     }

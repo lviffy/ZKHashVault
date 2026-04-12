@@ -15,6 +15,21 @@
         "internalType": "address",
         "name": "gatewayAddress",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "priceFeedAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "poolAAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "poolBAddress",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
@@ -432,16 +447,50 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "poolA",
+    "outputs": [
+      {
+        "internalType": "contract IMockLendingPool",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "poolB",
+    "outputs": [
+      {
+        "internalType": "contract IMockLendingPool",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "priceFeed",
+    "outputs": [
+      {
+        "internalType": "contract AggregatorV3Interface",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "int256",
         "name": "deltaPoolABps",
         "type": "int256"
-      },
-      {
-        "internalType": "uint64",
-        "name": "oraclePrice",
-        "type": "uint64"
       },
       {
         "internalType": "uint16",
@@ -452,11 +501,6 @@
         "internalType": "uint256",
         "name": "healthFactorWad",
         "type": "uint256"
-      },
-      {
-        "internalType": "uint64",
-        "name": "oracleTimestamp",
-        "type": "uint64"
       },
       {
         "internalType": "bytes32",

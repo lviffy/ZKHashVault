@@ -21,6 +21,8 @@ type DeploymentManifest = {
     safetyProofVerifierEcdsa: string;
     positionSafetyGateway: string;
     creditScorePassport: string;
+    mockLendingPoolA: string;
+    mockLendingPoolB: string;
   };
 };
 
@@ -62,8 +64,31 @@ async function main() {
   const gateway = await gatewayFactory.deploy(await groth16Adapter.getAddress());
   await gateway.waitForDeployment();
 
+  let priceFeedAddress = process.env.CHAINLINK_PRICE_FEED_ADDRESS?.trim();
+  if (!priceFeedAddress) {
+    const aggregatorFactory = await hre.ethers.getContractFactory("MockV3Aggregator");
+    // Start with a mock price of $2000 (scaled for 8 decimals usually: 2000 * 10^8 in normal projects, but vault code assumes plain numbers right now; wait, oracle limits are 1000 to 3000. So 2000 plain works or scale if needed)
+    const aggregator = await aggregatorFactory.deploy(8, 2000);
+    await aggregator.waitForDeployment();
+    priceFeedAddress = await aggregator.getAddress();
+    console.log("Deployed MockV3Aggregator at", priceFeedAddress);
+  }
+
+  const mockPoolFactory = await hre.ethers.getContractFactory("MockLendingPool");
+  const poolA = await mockPoolFactory.deploy(await token.getAddress());
+  await poolA.waitForDeployment();
+  const poolB = await mockPoolFactory.deploy(await token.getAddress());
+  await poolB.waitForDeployment();
+
   const vaultFactory = await hre.ethers.getContractFactory("AdaptiveVault");
-  const vault = await vaultFactory.deploy(await token.getAddress(), policyUpdater, await gateway.getAddress());
+  const vault = await vaultFactory.deploy(
+    await token.getAddress(),
+    policyUpdater,
+    await gateway.getAddress(),
+    priceFeedAddress,
+    await poolA.getAddress(),
+    await poolB.getAddress()
+  );
   await vault.waitForDeployment();
 
   const passportFactory = await hre.ethers.getContractFactory("CreditScorePassport");
@@ -92,6 +117,8 @@ async function main() {
       safetyProofVerifierEcdsa: await ecdsaVerifier.getAddress(),
       positionSafetyGateway: await gateway.getAddress(),
       creditScorePassport: await passport.getAddress(),
+      mockLendingPoolA: await poolA.getAddress(),
+      mockLendingPoolB: await poolB.getAddress(),
     },
   };
 

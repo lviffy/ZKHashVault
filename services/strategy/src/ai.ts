@@ -6,13 +6,15 @@ export async function askAIForStrategy(
   portfolio: { asset: string; currentAllocationBps: number }[],
   marketRiskLevel: "low" | "medium" | "high" 
 ) {
-  if (!process.env.NVIDIA_API_KEY) {
+  if (!process.env.NVIDIA_API_KEY || process.env.NVIDIA_API_KEY === "") {
     console.log("NVIDIA_API_KEY missing, using mock data for UI visual test");
     return mockAiResponse;
   }
   
+  const apiKey = process.env.NVIDIA_API_KEY.replace(/^"|"$/g, '');
+
   const openai = new OpenAI({
-    apiKey: process.env.NVIDIA_API_KEY,
+    apiKey: apiKey,
     baseURL: 'https://integrate.api.nvidia.com/v1',
   });
 
