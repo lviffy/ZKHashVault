@@ -94,19 +94,37 @@ export default async function DashboardHome() {
           </div>
           
           <div className="lg:col-span-2 grid gap-4 grid-cols-1 sm:grid-cols-2">
-            <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            {!strategyResult.ok && (
+              <article className="rounded-2xl border border-red-200 bg-red-50 p-6 shadow-sm sm:col-span-2">
+                <div className="flex items-center gap-3 text-red-700 font-semibold text-lg mb-2">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  Strategy Rejected by Vault Constraints
+                </div>
+                <p className="text-red-600 text-sm">
+                  The AI Rebalance Instruction was <strong>cryptographically blocked</strong> because it violates the Vault's strict safety parameters via ZK logic.
+                  <br /><br />
+                  <span className="font-mono text-xs bg-red-100 px-2 py-1 flex mt-2 w-max rounded text-red-800">
+                    Reason: {strategyResult.reason}
+                  </span>
+                </p>
+              </article>
+            )}
+
+            <article className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${!strategyResult.ok ? 'opacity-50 grayscale' : ''}`}>
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Expected APY</p>
               <p className="mt-3 text-3xl font-semibold text-slate-900">
                 {strategyResult.ok && strategyResult.policy ? (strategyResult.policy.expectedNetApyBps / 100).toFixed(2) : "0.00"}%
               </p>
             </article>
-            <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <article className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${!strategyResult.ok ? 'opacity-50 grayscale' : ''}`}>
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Risk Class</p>
               <p className="mt-3 text-3xl font-semibold text-slate-900">
                 {strategyResult.ok && strategyResult.policy ? strategyResult.policy.riskClass.toUpperCase() : "N/A"}
               </p>
             </article>
-            <article className="rounded-2xl border border-slate-200 bg-emerald-50 p-6 shadow-sm sm:col-span-2 flex flex-col justify-between overflow-hidden relative">
+            <article className={`rounded-2xl border border-slate-200 bg-emerald-50 p-6 shadow-sm sm:col-span-2 flex flex-col justify-between overflow-hidden relative ${!strategyResult.ok ? 'hidden' : ''}`}>
               <div className="absolute -right-10 -bottom-10 h-32 w-32 rounded-full bg-emerald-200 opacity-50 blur-2xl"></div>
               <p className="text-xs uppercase tracking-[0.2em] text-emerald-800 font-semibold">Active Strategy Insight</p>
               <p className="mt-2 text-sm leading-relaxed text-emerald-900 z-10 max-w-lg">
@@ -171,19 +189,30 @@ export default async function DashboardHome() {
             </div>
 
             <div className="mt-8 flex flex-col items-center justify-center py-6 rounded-xl border border-emerald-100 bg-emerald-50/50">
-              <div className="h-16 w-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4 shadow-sm">
-                <svg className="w-8 h-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
+              <div className={`h-16 w-16 rounded-full ${strategyResult.ok ? 'bg-emerald-100' : 'bg-red-100'} flex items-center justify-center mb-4 shadow-sm`}>
+                {strategyResult.ok ? (
+                  <svg className="w-8 h-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                ) : (
+                  <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                )}
               </div>
-              <p className="text-emerald-800 font-semibold text-lg">Protected by ZK-Snarks</p>
-              <p className="text-emerald-600/80 text-xs mt-1">Groth16 Verification Active</p>
+              <p className={`${strategyResult.ok ? 'text-emerald-800' : 'text-red-800'} font-semibold text-lg`}>
+                {strategyResult.ok ? 'Protected by ZK-Snarks' : 'Contract Execution Blocked'}
+              </p>
+              <p className={`${strategyResult.ok ? 'text-emerald-600/80' : 'text-red-600/80'} text-xs mt-1`}>
+                Groth16 Verification Active
+              </p>
             </div>
 
             <div className="mt-6">
               <SubmitProofButton 
                 signalHash={phase3.signalHash as `0x${string}`} 
                 proofBytes={phase3.proof as `0x${string}`} 
+                disabled={!strategyResult.ok}
               />
             </div>
             

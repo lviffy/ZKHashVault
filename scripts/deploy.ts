@@ -21,8 +21,8 @@ type DeploymentManifest = {
     safetyProofVerifierEcdsa: string;
     positionSafetyGateway: string;
     creditScorePassport: string;
-    mockLendingPoolA: string;
-    mockLendingPoolB: string;
+    poolAAdapter: string;
+    poolBAdapter: string;
   };
 };
 
@@ -66,37 +66,56 @@ async function main() {
 
   let priceFeedAddress = process.env.CHAINLINK_PRICE_FEED_ADDRESS?.trim();
   if (!priceFeedAddress) {
-    const aggregatorFactory = await hre.ethers.getContractFactory("MockV3Aggregator");
-    // Start with a mock price of $2000 (scaled for 8 decimals usually: 2000 * 10^8 in normal projects, but vault code assumes plain numbers right now; wait, oracle limits are 1000 to 3000. So 2000 plain works or scale if needed)
-    const aggregator = await aggregatorFactory.deploy(8, 2000);
-    await aggregator.waitForDeployment();
-    priceFeedAddress = await aggregator.getAddress();
-    console.log("Deployed MockV3Aggregator at", priceFeedAddress);
+    // Hardcode Sepolia ETH/USD Chainlink Price Feed (since we don't use mocks anymore)
+    priceFeedAddress = "0x694AA1769357215DE4FAC081bf1f309aDC325306";
+    console.log("No CHAINLINK_PRICE_FEED_ADDRESS provided, defaulting to real Sepolia ETH/USD Feed: ", priceFeedAddress);
   }
 
-  const mockPoolFactory = await hre.ethers.getContractFactory("MockLendingPool");
-  const poolA = await mockPoolFactory.deploy(await token.getAddress());
-  await poolA.waitForDeployment();
-  const poolB = await mockPoolFactory.deploy(await token.getAddress());
-  await poolB.waitForDeployment();
+  const network = await hre.ethers.provider.getNetwork();
+  const chainId = Number(network.chainId);
 
+  // -------------------------------------------------------------
+  // LENDING POOLS
+  // -------------------------------------------------------------
+  console.log("Network assumes a valid Testnet / Mainnet fork. Deploying real Aave and Compound Adapters...");
+  // Use Sepolia Testnet addresses:
+  const tokenAddress = await token.getAddress();
+  
+  const AAVE_POOL_SEPOLIA = getAddressEnvOrDefault("AAVE_POOL", "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951"); 
+  const AAVE_aUSDC_SEPOLIA = getAddressEnvOrDefault("AAVE_ATOKEN", "0x16dA4541aD1807f4443d92D26044C1147406EB80");
+  const COMPOUND_V3_SEPOLIA = getAddressEnvOrDefault("COMPOUND_POOL", "0x3c27ab2805d76c1A64988bc2c7A1b3C5c756Bc0C");
+
+  const aaveFactory = await hre.ethers.getContractFactory("AaveV3Adapter");
+  let poolAContract = await aaveFactory.deploy(tokenAddress, AAVE_aUSDC_SEPOLIA, AAVE_POOL_SEPOLIA);
+  await poolAContract.waitForDeployment();
+  let poolAAddress = await poolAContract.getAddress();
+
+  const compoundFactory = await hre.ethers.getContractFactory("CompoundV3Adapter");
+  let poolBContract = await compoundFactory.deploy(tokenAddress, COMPOUND_V3_SEPOLIA);
+  await poolBContract.waitForDeployment();
+  let poolBAddress = await poolBContract.getAddress();
+
+  // -------------------------------------------------------------
+  // VAULT DEPLOYMENT
+  // -------------------------------------------------------------
   const vaultFactory = await hre.ethers.getContractFactory("AdaptiveVault");
   const vault = await vaultFactory.deploy(
     await token.getAddress(),
     policyUpdater,
     await gateway.getAddress(),
     priceFeedAddress,
-    await poolA.getAddress(),
-    await poolB.getAddress()
+    poolAAddress,
+    poolBAddress
   );
   await vault.waitForDeployment();
+
+  await poolAContract.setVault(await vault.getAddress());
+  await poolBContract.setVault(await vault.getAddress());
+  console.log("Bound real adapters to the vault.");
 
   const passportFactory = await hre.ethers.getContractFactory("CreditScorePassport");
   const passport = await passportFactory.deploy(passportOwner);
   await passport.waitForDeployment();
-
-  const network = await hre.ethers.provider.getNetwork();
-  const chainId = Number(network.chainId);
 
   const manifest: DeploymentManifest = {
     chainId,
@@ -117,8 +136,8 @@ async function main() {
       safetyProofVerifierEcdsa: await ecdsaVerifier.getAddress(),
       positionSafetyGateway: await gateway.getAddress(),
       creditScorePassport: await passport.getAddress(),
-      mockLendingPoolA: await poolA.getAddress(),
-      mockLendingPoolB: await poolB.getAddress(),
+      poolAAdapter: poolAAddress,
+      poolBAdapter: poolBAddress,
     },
   };
 
@@ -129,7 +148,6 @@ async function main() {
   await writeFile(outputPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
 
   console.log("Deployment complete");
-  console.log(JSON.stringify(manifest, null, 2));
   console.log(`Saved manifest to ${outputPath}`);
 }
 

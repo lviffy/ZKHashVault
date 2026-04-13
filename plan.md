@@ -46,13 +46,13 @@ Ship a verifiable risk-constrained vault flow where strategy output is bounded b
 
 ### Phase 4: Frontend + Integration
 - [x] Dashboard surfaces strategy output and proof payload.
-- [ ] Wallet connect + live contract reads/writes for deposit/withdraw.
-- [ ] Rebalance history sourced from indexed events.
-- [ ] One-click proof submission transaction flow.
+- [x] Wallet connect + live contract reads/writes for deposit/withdraw.
+- [x] Rebalance history sourced from indexed events.
+- [x] One-click proof submission transaction flow.
 
 ### Phase 5: Demo Hardening
-- [ ] Full e2e script on testnet: deposit -> rebalance -> verify proof.
-- [ ] Failure-mode handling for stale oracle / policy rejection in UI.
+- [x] Full e2e script on testnet: deposit -> rebalance -> verify proof.
+- [x] Failure-mode handling for stale oracle / policy rejection in UI.
 - [ ] Demo evidence pack (tx hashes, screenshots, short runbook).
 
 ## Immediate Next Steps

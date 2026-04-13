@@ -24,7 +24,7 @@ export function SubmitProofButton({
   const handleVerify = () => {
     writeContract({
       address: CONTRACT_ADDRESSES.PositionSafetyGateway,
-      abi: PositionSafetyGatewayJson,
+      abi: PositionSafetyGatewayJson.abi,
       functionName: "verifyPositionSafety",
       args: [signalHash, proofBytes],
     });

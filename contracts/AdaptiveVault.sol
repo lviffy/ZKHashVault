@@ -19,7 +19,7 @@ interface AggregatorV3Interface {
         returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
 }
 
-interface IMockLendingPool {
+interface IPoolAdapter {
     function deposit(uint256 amount) external;
     function withdraw(uint256 amount) external;
     function getBalance(address user) external view returns (uint256);
@@ -50,8 +50,8 @@ contract AdaptiveVault {
     IERC20Like public immutable asset;
     address public immutable safetyGateway;
     AggregatorV3Interface public immutable priceFeed;
-    IMockLendingPool public immutable poolA;
-    IMockLendingPool public immutable poolB;
+    IPoolAdapter public immutable poolA;
+    IPoolAdapter public immutable poolB;
     address public owner;
     address public policyUpdater;
 
@@ -115,8 +115,8 @@ contract AdaptiveVault {
         asset = IERC20Like(assetAddress);
         safetyGateway = gatewayAddress;
         priceFeed = AggregatorV3Interface(priceFeedAddress);
-        poolA = IMockLendingPool(poolAAddress);
-        poolB = IMockLendingPool(poolBAddress);
+        poolA = IPoolAdapter(poolAAddress);
+        poolB = IPoolAdapter(poolBAddress);
 
         asset.approve(poolAAddress, type(uint256).max);
         asset.approve(poolBAddress, type(uint256).max);

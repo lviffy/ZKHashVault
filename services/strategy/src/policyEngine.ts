@@ -5,7 +5,7 @@ import type {
   RebalanceInstruction,
   StrategyConfig,
   StrategyPolicy,
-} from "./types";
+} from "./types.ts";
 
 const BPS = 10_000;
 
