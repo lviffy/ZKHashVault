@@ -66,9 +66,11 @@ async function main() {
 
   let priceFeedAddress = process.env.CHAINLINK_PRICE_FEED_ADDRESS?.trim();
   if (!priceFeedAddress) {
-    // Hardcode Sepolia ETH/USD Chainlink Price Feed (since we don't use mocks anymore)
-    priceFeedAddress = "0x694AA1769357215DE4FAC081bf1f309aDC325306";
-    console.log("No CHAINLINK_PRICE_FEED_ADDRESS provided, defaulting to real Sepolia ETH/USD Feed: ", priceFeedAddress);
+    console.log("No CHAINLINK_PRICE_FEED_ADDRESS in .env. Deploying native HashKeyPriceOracle...");
+    const oracleFactory = await hre.ethers.getContractFactory("HashKeyPriceOracle");
+    const oracle = await oracleFactory.deploy(2000); // Deploy with $2000 ETH base
+    await oracle.waitForDeployment();
+    priceFeedAddress = await oracle.getAddress();
   }
 
   const network = await hre.ethers.provider.getNetwork();
@@ -77,41 +79,49 @@ async function main() {
   // -------------------------------------------------------------
   // LENDING POOLS
   // -------------------------------------------------------------
-  console.log("Network assumes a valid Testnet / Mainnet fork. Deploying real Aave and Compound Adapters...");
-  // Use Sepolia Testnet addresses:
+  console.log(`Network targets HashKey testnet (chainId: ${chainId}). Deploying Native Yield Endpoints...`);
   const tokenAddress = await token.getAddress();
   
-  const AAVE_POOL_SEPOLIA = getAddressEnvOrDefault("AAVE_POOL", "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951"); 
-  const AAVE_aUSDC_SEPOLIA = getAddressEnvOrDefault("AAVE_ATOKEN", "0x16dA4541aD1807f4443d92D26044C1147406EB80");
-  const COMPOUND_V3_SEPOLIA = getAddressEnvOrDefault("COMPOUND_POOL", "0x3c27ab2805d76c1A64988bc2c7A1b3C5c756Bc0C");
+  // 1. Deploy two separate HashKey Yield Protocols
+  const protocolFactory = await hre.ethers.getContractFactory("HashKeyLendingProtocol");
+  
+  const protocolA = await protocolFactory.deploy(tokenAddress);
+  await protocolA.waitForDeployment();
+  const protocolAAddr = await protocolA.getAddress();
+  
+  const protocolB = await protocolFactory.deploy(tokenAddress);
+  await protocolB.waitForDeployment();
+  const protocolBAddr = await protocolB.getAddress();
 
-  const aaveFactory = await hre.ethers.getContractFactory("AaveV3Adapter");
-  let poolAContract = await aaveFactory.deploy(tokenAddress, AAVE_aUSDC_SEPOLIA, AAVE_POOL_SEPOLIA);
-  await poolAContract.waitForDeployment();
-  let poolAAddress = await poolAContract.getAddress();
+  // 2. Deploy Adapters to bridge Vault -> Protocols
+  const adapterFactory = await hre.ethers.getContractFactory("HashKeyLendingAdapter");
+  
+  const adapterA = await adapterFactory.deploy(tokenAddress, protocolAAddr);
+  await adapterA.waitForDeployment();
+  const adapterAAddr = await adapterA.getAddress();
 
-  const compoundFactory = await hre.ethers.getContractFactory("CompoundV3Adapter");
-  let poolBContract = await compoundFactory.deploy(tokenAddress, COMPOUND_V3_SEPOLIA);
-  await poolBContract.waitForDeployment();
-  let poolBAddress = await poolBContract.getAddress();
+  const adapterB = await adapterFactory.deploy(tokenAddress, protocolBAddr);
+  await adapterB.waitForDeployment();
+  const adapterBAddr = await adapterB.getAddress();
 
   // -------------------------------------------------------------
   // VAULT DEPLOYMENT
   // -------------------------------------------------------------
   const vaultFactory = await hre.ethers.getContractFactory("AdaptiveVault");
   const vault = await vaultFactory.deploy(
-    await token.getAddress(),
+    tokenAddress,
     policyUpdater,
     await gateway.getAddress(),
     priceFeedAddress,
-    poolAAddress,
-    poolBAddress
+    adapterAAddr,
+    adapterBAddr
   );
   await vault.waitForDeployment();
 
-  await poolAContract.setVault(await vault.getAddress());
-  await poolBContract.setVault(await vault.getAddress());
-  console.log("Bound real adapters to the vault.");
+  // Wire Adapters securely to Vault
+  await adapterA.setVault(await vault.getAddress());
+  await adapterB.setVault(await vault.getAddress());
+  console.log("Bound native yield adapters to the vault.");
 
   const passportFactory = await hre.ethers.getContractFactory("CreditScorePassport");
   const passport = await passportFactory.deploy(passportOwner);
@@ -136,8 +146,8 @@ async function main() {
       safetyProofVerifierEcdsa: await ecdsaVerifier.getAddress(),
       positionSafetyGateway: await gateway.getAddress(),
       creditScorePassport: await passport.getAddress(),
-      poolAAdapter: poolAAddress,
-      poolBAdapter: poolBAddress,
+      poolAAdapter: adapterAAddr,
+      poolBAdapter: adapterBAddr,
     },
   };
 

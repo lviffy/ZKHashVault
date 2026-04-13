@@ -53,7 +53,7 @@ async function main() {
   const latestBlock = await ethers.provider.getBlock("latest");
 
   const priceFeedAddress = await Vault.priceFeed();
-  const oracle = await ethers.getContractAt("AggregatorV3Interface", priceFeedAddress);
+  const oracle = await ethers.getContractAt("contracts/HashKeyPriceOracle.sol:AggregatorV3Interface", priceFeedAddress);
   const oracleData = await oracle.latestRoundData();
   const currentPrice = Number(oracleData.answer);
   // We use the real chainlink price that is returned or a dummy bound just for the math check
@@ -104,6 +104,10 @@ async function main() {
 
   await ethers.provider.send("hardhat_setBalance", [updaterAddress, "0xDE0B6B3A7640000"]); 
   
+  // Refresh price feed so OracleStale doesn't trigger
+  const hkOracle = await ethers.getContractAt("HashKeyPriceOracle", priceFeedAddress);
+  await (hkOracle.connect(deployer) as any).updateAnswer(currentPrice);
+
   // Set the staleness dynamically if we want using hardhat overrides, but we bypass it here.
   const rebalanceTx = await Vault.connect(impersonatedUpdater).rebalance(
     instruction!.deltaPoolABps,
