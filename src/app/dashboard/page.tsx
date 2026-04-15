@@ -7,6 +7,7 @@ import { WalletConnect } from "../components/WalletConnect";
 import { MyPositionCard } from "../components/MyPositionCard";
 import { SubmitProofButton } from "../components/SubmitProofButton";
 import { RebalanceHistory } from "../components/RebalanceHistory";
+import { ChatbotBox } from "../components/ChatbotBox";
 
 const DEMO_SNAPSHOT_TIMESTAMP = 1_776_000_000;
 
@@ -89,8 +90,23 @@ export default async function DashboardHome() {
         </section>
 
         <section className="grid gap-8 lg:grid-cols-3 items-start">
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 flex flex-col gap-4">
             <MyPositionCard />
+            
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-2">
+              <article className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${!strategyResult.ok ? 'opacity-50 grayscale' : ''}`}>
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500 truncate">Expected APY</p>
+                <p className="mt-3 text-2xl lg:text-3xl font-semibold text-slate-900">
+                  {strategyResult.ok && strategyResult.policy ? (strategyResult.policy.expectedNetApyBps / 100).toFixed(2) : "0.00"}%
+                </p>
+              </article>
+              <article className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${!strategyResult.ok ? 'opacity-50 grayscale' : ''}`}>
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500 truncate">Risk Class</p>
+                <p className="mt-3 text-2xl lg:text-3xl font-semibold text-slate-900">
+                  {strategyResult.ok && strategyResult.policy ? strategyResult.policy.riskClass.toUpperCase() : "N/A"}
+                </p>
+              </article>
+            </div>
           </div>
           
           <div className="lg:col-span-2 grid gap-4 grid-cols-1 sm:grid-cols-2">
@@ -112,18 +128,6 @@ export default async function DashboardHome() {
               </article>
             )}
 
-            <article className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${!strategyResult.ok ? 'opacity-50 grayscale' : ''}`}>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Expected APY</p>
-              <p className="mt-3 text-3xl font-semibold text-slate-900">
-                {strategyResult.ok && strategyResult.policy ? (strategyResult.policy.expectedNetApyBps / 100).toFixed(2) : "0.00"}%
-              </p>
-            </article>
-            <article className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${!strategyResult.ok ? 'opacity-50 grayscale' : ''}`}>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Risk Class</p>
-              <p className="mt-3 text-3xl font-semibold text-slate-900">
-                {strategyResult.ok && strategyResult.policy ? strategyResult.policy.riskClass.toUpperCase() : "N/A"}
-              </p>
-            </article>
             <article className={`rounded-2xl border border-slate-200 bg-emerald-50 p-6 shadow-sm sm:col-span-2 flex flex-col justify-between overflow-hidden relative ${!strategyResult.ok ? 'hidden' : ''}`}>
               <div className="absolute -right-10 -bottom-10 h-32 w-32 rounded-full bg-emerald-200 opacity-50 blur-2xl"></div>
               <p className="text-xs uppercase tracking-[0.2em] text-emerald-800 font-semibold">Active Strategy Insight</p>
@@ -132,6 +136,10 @@ export default async function DashboardHome() {
                 Capital automatically flows to secure yielding assets while maintaining strict health factor thresholds protecting your position.
               </p>
             </article>
+            
+            <div className="sm:col-span-2">
+              <ChatbotBox />
+            </div>
           </div>
         </section>
 
