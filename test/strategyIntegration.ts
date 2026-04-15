@@ -1,8 +1,8 @@
 import { expect } from "chai";
 import hre from "hardhat";
 const { ethers } = hre;
-import { runStrategyTick } from "../services/strategy/src/index.ts";
-import { StrategySnapshotCache } from "../services/strategy/src/snapshotCache.ts";
+import { runStrategyTick } from "../services/strategy/src/index";
+import { StrategySnapshotCache } from "../services/strategy/src/snapshotCache";
 
 describe("Phase 2 Integration: Strategy Engine -> Vault Execution", function () {
   async function deployFixture() {

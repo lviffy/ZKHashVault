@@ -1,5 +1,5 @@
 import { Contract, JsonRpcProvider, Wallet } from "ethers";
-import type { RebalanceInstruction } from "./types.ts";
+import type { RebalanceInstruction } from "./types";
 
 const ADAPTIVE_VAULT_ABI = [
   "function rebalance(int256 deltaPoolABps, uint16 slippageBps, uint256 healthFactorWad, bytes32 signalHash, bytes calldata proof) external",

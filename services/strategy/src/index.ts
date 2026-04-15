@@ -1,7 +1,7 @@
-import { buildRebalanceInstruction, derivePolicy, validatePolicy } from "./policyEngine.ts";
-import { executeRebalance, type VaultExecutor } from "./executionWorker.ts";
-import { StrategySnapshotCache } from "./snapshotCache.ts";
-import type { MarketSnapshot, StrategyConfig } from "./types.ts";
+import { buildRebalanceInstruction, derivePolicy, validatePolicy } from "./policyEngine";
+import { executeRebalance, type VaultExecutor } from "./executionWorker";
+import { StrategySnapshotCache } from "./snapshotCache";
+import type { MarketSnapshot, StrategyConfig } from "./types";
 
 export async function runStrategyTick(input: {
   snapshot: MarketSnapshot;

@@ -3,10 +3,10 @@ const { ethers } = hre;
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { runStrategyTick } from "../services/strategy/src/index.ts";
-import { StrategySnapshotCache } from "../services/strategy/src/snapshotCache.ts";
+import { runStrategyTick } from "../services/strategy/src/index";
+import { StrategySnapshotCache } from "../services/strategy/src/snapshotCache";
 
-import { buildGroth16SafetyProofPayload } from "../services/strategy/src/safetyProof.ts";
+import { buildGroth16SafetyProofPayload } from "../services/strategy/src/safetyProof";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,8 +27,8 @@ async function main() {
   console.log(`Starting E2E vault test with chainId: ${chainId}`);
   
   // 1. Connect to deployed contracts
-  const Token = await ethers.getContractAt("VaultAssetToken", manifest.contracts.vaultAssetToken);
-  const Vault = await ethers.getContractAt("ZKHashVault", manifest.contracts.zkHashVault);
+  const Token: any = await ethers.getContractAt("VaultAssetToken", manifest.contracts.vaultAssetToken);
+  const Vault: any = await ethers.getContractAt("ZKHashVault", manifest.contracts.zkHashVault);
   
   console.log(`[1/5] Contracts loaded. Vault address: ${await Vault.getAddress()}`);
 
