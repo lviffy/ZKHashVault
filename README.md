@@ -1,337 +1,420 @@
 # ZKHashVault
 
-> A yield vault where risk constraints are cryptographically enforced on-chain — not just promised.
+AI-assisted yield vault with on-chain risk guardrails and verifiable safety proofs.
 
----
+ZKHashVault combines:
+- a policy-constrained vault contract,
+- adaptive strategy logic,
+- zero-knowledge safety verification,
+- and a live Next.js dashboard with wallet actions.
 
-## Overview
+Instead of asking users to trust operator behavior, the system enforces hard limits at the contract layer before capital can move.
 
-ZKHashVault is an AI-assisted DeFi yield vault that continuously balances return and liquidation risk through policy-driven automation and verifiable risk controls.
+## Table of Contents
 
-Most yield vaults ask users to trust that the protocol is managing risk responsibly. ZKHashVault removes that assumption. Every rebalance is bounded by on-chain policy constraints. Every position can be proven safe via a ZK proof that any user can submit and verify independently.
+- [What This Project Delivers](#what-this-project-delivers)
+- [Feature Set](#feature-set)
+- [Workflow Diagrams](#workflow-diagrams)
+- [Architecture Overview](#architecture-overview)
+- [Smart Contracts](#smart-contracts)
+- [Strategy and AI Layer](#strategy-and-ai-layer)
+- [Zero-Knowledge Proof Pipeline](#zero-knowledge-proof-pipeline)
+- [Frontend Experience](#frontend-experience)
+- [Repository Layout](#repository-layout)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [Deployment](#deployment)
+- [Run the End-to-End Scenario](#run-the-end-to-end-scenario)
+- [Environment Variables](#environment-variables)
+- [Testing](#testing)
+- [Current Network Notes](#current-network-notes)
+- [Roadmap](#roadmap)
+- [License](#license)
 
----
+## What This Project Delivers
 
-## The Core Loop
+ZKHashVault implements a complete product loop:
 
+1. User deposits `avUSD` into the vault.
+2. Strategy engine computes policy output from market inputs.
+3. Rebalance instruction is checked against strict contract guardrails.
+4. Position safety proof is verified on-chain.
+5. Allocation updates are emitted and rendered in the dashboard with explorer links.
+
+This repository includes smart contracts, ZK circuits and proving scripts, strategy services, and a production-style UI.
+
+## Feature Set
+
+### On-chain vault and execution
+- Vault share accounting with deposit and withdraw in `ZKHashVault`.
+- Role-gated rebalance execution via `policyUpdater`.
+- Hard guardrails enforced on every rebalance:
+  - max allocation delta: `20%` (`MAX_ALLOCATION_DELTA_BPS = 2000`)
+  - max slippage: `0.5%` (`MAX_SLIPPAGE_BPS = 50`)
+  - min health factor: `1.2x` (`MIN_HEALTH_FACTOR_WAD = 1.2e18`)
+  - oracle freshness: `60s` (`MAX_ORACLE_STALENESS_SECONDS = 60`)
+- Oracle min/max bounds configurable by owner.
+- Allocation events emitted with price, slippage, health factor, and timestamp.
+
+### Lending adapters and protocol simulation
+- Native testnet lending simulation:
+  - `HashKeyLendingProtocol`
+  - `HashKeyLendingAdapter`
+- Additional ready adapters:
+  - `AaveV3Adapter`
+  - `CompoundV3Adapter`
+
+### ZK and safety proofs
+- `PositionSafetyGateway` as the proof verification entrypoint.
+- Groth16 verifier path:
+  - `HealthCheckGroth16Verifier.sol` (generated verifier)
+  - `Groth16SafetyProofVerifier.sol` (payload adapter)
+- ECDSA fallback verifier path:
+  - `SafetyProofVerifier.sol`
+- Circuit proving pipeline in `circuits/` and `scripts/zk/`.
+
+### AI strategy and risk policy engine
+- Deterministic policy derivation in `services/strategy/src/policyEngine.ts`.
+- Risk model:
+  - score = `60% volatility + 40% utilization`
+  - risk classes: `low`, `medium`, `high`
+- Rebalance instruction builder with bounded delta and policy checks.
+- Credit scoring utilities in `scoreEngine.ts`.
+- Optional AI allocation suggestion via NVIDIA-hosted model API.
+
+### Frontend and UX
+- Next.js App Router frontend.
+- Landing page and live dashboard.
+- Wallet connect with Wagmi.
+- Deposit/withdraw flow from UI.
+- One-click proof submission to `PositionSafetyGateway`.
+- On-chain rebalance history pulled from event logs.
+- Chat assistant API endpoint (`/api/chat`) using NVIDIA API compatible OpenAI client.
+
+### DevEx and deployment
+- Hardhat compile/test/deploy workflow.
+- Deterministic deployment manifest output to `deployments/<chainId>.json`.
+- End-to-end script for deposit -> strategy tick -> proof -> rebalance.
+
+## Workflow Diagrams
+
+### 1) System architecture
+
+```mermaid
+flowchart LR
+    U[User Wallet] --> WEB[Next.js Dashboard]
+    WEB --> CHAT[/api/chat]
+    WEB --> STRAT[Strategy Engine]
+    WEB --> GW[PositionSafetyGateway]
+
+    STRAT --> POL[Policy Engine]
+    POL --> INST[Rebalance Instruction]
+    INST --> VAULT[ZKHashVault]
+
+    ORACLE[HashKeyPriceOracle/Chainlink] --> VAULT
+    VAULT --> A[Pool A Adapter]
+    VAULT --> B[Pool B Adapter]
+    A --> PA[HashKey/Aave Pool]
+    B --> PB[HashKey/Compound Pool]
+
+    ZK[Groth16 Proof Artifacts] --> GW
+    GW --> GV[Groth16SafetyProofVerifier]
+    GV --> HC[HealthCheckGroth16Verifier]
+    GW -.fallback.-> ECDSA[SafetyProofVerifier]
+
+    VAULT --> EVENTS[Rebalanced Events]
+    EVENTS --> WEB
 ```
-Deposit → AI scores risk → Policy executes rebalance → ZK proof confirms safety → Dashboard reflects state
+
+### 2) Rebalance execution sequence
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI as Dashboard
+    participant SE as Strategy Engine
+    participant Vault as ZKHashVault
+    participant GW as PositionSafetyGateway
+    participant Verifier as Safety Verifier
+    participant Oracle as Price Oracle
+    participant PoolA
+    participant PoolB
+
+    User->>UI: Open dashboard / trigger strategy cycle
+    UI->>SE: Provide snapshot + current allocation
+    SE->>SE: Derive policy + validate constraints
+    SE->>Vault: rebalance(delta, slippage, health, signalHash, proof)
+    Vault->>GW: verifyPositionSafety(signalHash, proof)
+    GW->>Verifier: verify(signalHash, proof)
+    Verifier-->>GW: true
+    GW-->>Vault: accepted
+    Vault->>Oracle: latestRoundData()
+    Vault->>Vault: Check staleness, bounds, slippage, health, max delta
+    Vault->>PoolA: deposit/withdraw to target
+    Vault->>PoolB: deposit/withdraw to target
+    Vault-->>UI: Emit Rebalanced event
 ```
 
-This loop is the product. Everything else is infrastructure in support of it.
+### 3) ZK proof lifecycle
 
----
-
-## Problem
-
-- Retail users react too slowly to market changes, often discovering risk only after a liquidation event.
-- Static allocation strategies underperform in rotating yield environments.
-- Most DeFi protocols ask users to trust off-chain risk management with no on-chain verifiability.
-- Users want risk transparency but do not want to reveal full wallet positions to third parties.
-
----
-
-## Solution
-
-ZKHashVault introduces a closed-loop optimization system with cryptographic enforcement at every layer:
-
-1. Users deposit assets and select a risk profile.
-2. A strategy engine ingests market and portfolio telemetry and computes risk class, target allocations, and rebalance bounds.
-3. A policy executor contract accepts rebalance instructions **only if they stay within hardcoded on-chain bounds** — max allocation delta, slippage cap, minimum health factor.
-4. Users can generate and submit a ZK proof verifying that their position satisfies predefined safety constraints, without revealing underlying portfolio details.
-5. The dashboard reflects APY, risk score, health factor, and a full action timeline in real time.
-
----
-
-## MVP Scope
-
-The MVP is intentionally narrow. One complete, trustworthy flow is worth more than five incomplete features.
-
-### What is included
-
-- **ERC-4626 Vault** — deposit, withdraw, share accounting. Two allocation targets: a lending protocol and a stablecoin pool.
-- **Policy Executor Contract** — on-chain enforcement of rebalance bounds. Max 20% allocation shift per rebalance, slippage cap, minimum health factor threshold. Rebalances that violate these constraints are rejected at the contract level.
-- **Strategy Engine** — Uses the Google Gemini 2.0 Flash API to act as an autonomous risk-adjustment agent. It ingests price feeds and utilization rates, computes a weighted risk score, and outputs target allocations within policy bounds.
-- **ZK Health Proof** — a Groth16 proof verifying that the current collateral ratio exceeds a minimum threshold. Verified on-chain. The verification transaction is publicly visible and linked from the dashboard.
-- **Dashboard** — current APY, risk score, health factor, rebalance action timeline, and a one-click proof generation and submission flow.
-
-### What is explicitly out of scope for MVP
-
-| Feature | Status |
-|---|---|
-| Credit Score NFT | Phase 2 |
-| Cross-chain routing | Phase 2 |
-| Liquidation insurance pool | Phase 2 |
-| ZK-proven model inference | Phase 2 |
-| Intent / solver layer | Phase 2 |
-| ML scoring model | Phase 2 |
-
----
-
-## Architecture
-
-```
-User Wallet + Web App
-        │
-        ▼
-Intent and Policy API
-        │
-        ├──────────────────────┐
-        ▼                      ▼
-Strategy and Scoring     ZK Prover (client-side)
-Engine (off-chain)             │
-        │                      ▼
-        ▼              On-chain ZK Verifier
-Execution Guard
-and Relayer
-        │
-        ▼
-ERC-4626 Vault Contract
-        │
-        ▼
-Indexer and Analytics
-        │
-        ▼
-Dashboard (real-time)
+```mermaid
+flowchart TD
+    INPUT[health_check input JSON] --> PROVE[npm run zk:prove]
+    PROVE --> WITNESS[witness.wtns]
+    PROVE --> PROOF[proof.json]
+    PROVE --> PUBLIC[public.json]
+    PROOF --> ENCODE[npm run zk:encode-payload]
+    PUBLIC --> ENCODE
+    ENCODE --> BYTES[ABI-encoded proof payload]
+    BYTES --> GATEWAY[PositionSafetyGateway.verifyPositionSafety]
+    GATEWAY --> ADAPTER[Groth16SafetyProofVerifier]
+    ADAPTER --> GENERATED[HealthCheckGroth16Verifier.verifyProof]
+    GENERATED --> RESULT[On-chain accept/reject]
 ```
 
-The strategy engine is off-chain but its recommendations are bounded by the on-chain policy executor. The executor is the trust anchor — users do not need to trust the strategy engine to be safe.
+## Architecture Overview
 
----
+ZKHashVault is built as a hybrid architecture:
+
+- Trust-critical enforcement happens on-chain in `ZKHashVault` and proof verifier contracts.
+- Strategy computation and AI assistance happen off-chain.
+- UI surfaces both performance and risk controls with transaction-level transparency.
+
+### Design principle
+
+Off-chain intelligence is allowed to suggest actions, but not to bypass on-chain policy.
 
 ## Smart Contracts
 
-| Contract | Responsibility |
+| Contract | Purpose |
 |---|---|
-| `Vault.sol` | ERC-4626 deposit, withdrawal, share accounting, allocation state |
-| `PolicyExecutor.sol` | Validates and executes rebalance instructions within hardcoded policy bounds |
-| `ZKVerifier.sol` | Accepts Groth16 proofs, validates health constraints, emits verification events |
+| `contracts/ZKHashVault.sol` | Core vault with deposit, withdraw, and guarded `rebalance` |
+| `contracts/PositionSafetyGateway.sol` | Gateway that enforces proof verification |
+| `contracts/Groth16SafetyProofVerifier.sol` | Decodes Groth16 proof payload and calls generated verifier |
+| `contracts/HealthCheckGroth16Verifier.sol` | Generated Groth16 verifier contract |
+| `contracts/SafetyProofVerifier.sol` | ECDSA-based fallback verifier |
+| `contracts/CreditScorePassport.sol` | Credit score passport minting and score updates |
+| `contracts/VaultAssetToken.sol` | ERC20 asset token (`avUSD`) |
+| `contracts/HashKeyPriceOracle.sol` | Testnet oracle compatible with `latestRoundData()` |
+| `contracts/HashKeyLendingProtocol.sol` | Simulated yield protocol for testnet/demo |
+| `contracts/HashKeyLendingAdapter.sol` | Adapter that connects vault to HashKey protocol |
+| `contracts/AaveV3Adapter.sol` | Adapter interface for Aave V3-style pool |
+| `contracts/CompoundV3Adapter.sol` | Adapter interface for Compound V3 Comet |
 
-### Policy Bounds (hardcoded in `PolicyExecutor.sol`)
+## Strategy and AI Layer
 
-```solidity
-uint256 public constant MAX_ALLOCATION_DELTA = 2000;  // 20% in basis points
-uint256 public constant MIN_HEALTH_FACTOR    = 1.2e18; // 1.2x
-uint256 public constant MAX_SLIPPAGE         = 50;     // 0.5% in basis points
-```
+Strategy code lives in `services/strategy/src/`.
 
-Any strategy instruction that violates these bounds is rejected at the contract level. The strategy engine cannot override them.
+Main modules:
+- `policyEngine.ts`: derive policy, validate constraints, build instructions.
+- `index.ts`: strategy tick orchestration.
+- `executionWorker.ts`: optional EVM transaction submission.
+- `scoreEngine.ts`: wallet behavior to credit score mapping.
+- `phase3.ts`: phase-3 flow combining credit + proof preparation.
+- `safetyProof.ts`: signal hash and proof payload construction.
+- `ai.ts`: AI allocation suggestion call (NVIDIA endpoint, mock fallback).
 
----
+### Risk classes
 
-## ZK Risk Verification
+- `low` (`<= 30`): hold / minimal reduction.
+- `medium` (`31-60`): reduce risky pool up to `10%`.
+- `high` (`> 60`): reduce risky pool up to `20%` and mark proof required.
 
-The ZK layer proves a single statement for the MVP:
+## Zero-Knowledge Proof Pipeline
 
-> *"The current collateral ratio of this position is greater than 1.2, without revealing the underlying position details."*
+Circuit and artifacts are under `circuits/`.
 
-**Circuit:** Circom  
-**Proving scheme:** Groth16  
-**Verifier:** Solidity Groth16 verifier contract, deployed on-chain  
+Statement currently proven:
 
-Users generate the proof client-side and submit it via the dashboard. The resulting verification transaction is publicly visible on the block explorer, providing a trustless audit trail of position safety.
+`collateralUsd / debtUsd >= minCollateralRatioBps / 10000`
 
----
+Helper scripts:
+- `scripts/zk/setup.sh`: compile circuit + Groth16 setup + export verifier.
+- `scripts/zk/prove.sh`: generate witness + proof + public signals.
+- `scripts/zk/sync_verifier.sh`: sync generated verifier into contracts.
+- `scripts/zk/build_input.js`: create custom circuit input JSON.
+- `scripts/zk/encode_payload.js`: ABI-encode proof payload for gateway call.
 
-## Tech Stack
+## Frontend Experience
 
-**Smart Contracts**
-- Solidity, OpenZeppelin, Foundry
+Frontend code is in `src/app/`.
 
-**ZK Stack**
-- Circom, snarkjs, Groth16 verifier contracts
-
-**Backend Services**
-- Node.js, TypeScript, Fastify, ethers.js
-
-**Strategy Engine**
-- Python, rule-based scoring (scikit-learn ready for Phase 2)
-
-**Data Layer**
-- The Graph (subgraph for vault events), Redis cache (analytics reads only, not on critical execution path)
-
-**Frontend**
-- Next.js, wagmi, viem, Tailwind CSS
-
-**DevOps**
-- Docker, GitHub Actions, Vercel
-
----
+Available pages and modules:
+- Landing page: `src/app/page.tsx`
+- Dashboard: `src/app/dashboard/page.tsx`
+- Components:
+  - `MyPositionCard.tsx` for deposit/withdraw and balances
+  - `SubmitProofButton.tsx` for on-chain proof verification
+  - `RebalanceHistory.tsx` for explorer-linked rebalance logs
+  - `WalletConnect.tsx` for wallet status and connect/disconnect
+  - `ChatbotBox.tsx` for strategy assistant chat
+- API route:
+  - `src/app/api/chat/route.ts` (NVIDIA-backed assistant endpoint)
 
 ## Repository Layout
 
-```
-zkhashvault/
-├── contracts/
-│   ├── src/
-│   │   ├── Vault.sol
-│   │   ├── PolicyExecutor.sol
-│   │   └── ZKVerifier.sol
-│   └── test/
-├── circuits/
-│   ├── health_check.circom
-│   └── artifacts/           # pre-generated proving artifacts
-├── services/
-│   ├── strategy/            # scoring and allocation engine
-│   └── indexer/             # event processing and analytics endpoints
-├── apps/
-│   └── web/                 # Next.js dashboard
-└── docs/
+```text
+adaptive-vault/
+|- contracts/
+|- circuits/
+|- scripts/
+|  |- deploy.ts
+|  |- e2e.ts
+|  \- zk/
+|- services/
+|  \- strategy/src/
+|- src/app/
+|- test/
+|- deployments/
+|- hardhat.config.ts
+\- package.json
 ```
 
----
-
-## Build and Run
-
-### Prerequisites
+## Prerequisites
 
 - Node.js 18+
-- Foundry
-- Python 3.10+
-- snarkjs
-- circom
+- npm
+- `circom` in PATH (for circuit compilation)
+- `snarkjs` in PATH (proof generation and verification)
 
-### Contracts
+## Quick Start
+
+### 1) Install dependencies
 
 ```bash
 npm install
-npm run contracts:compile
-npm run contracts:test
 ```
 
-### Strategy Service
-
-```bash
-cd services/strategy
-pip install -r requirements.txt
-python main.py
-```
-
-### ZK Circuits (Groth16)
-
-```bash
-npm run zk:setup
-npm run zk:prove
-npm run zk:sync-verifier
-```
-
-Generate custom circuit input:
-
-```bash
-npm run zk:build-input -- 125000 61000 12000 > circuits/inputs/health_check.custom.json
-npm run zk:prove -- circuits/inputs/health_check.custom.json
-npm run zk:encode-payload -- circuits/artifacts/proof/proof.json circuits/artifacts/proof/public.json 0x<signalHash>
-```
-
-### Indexer
-
-```bash
-cd services/indexer
-npm install
-npm run dev
-```
-
-### Frontend
-
-```bash
-cd apps/web
-npm install
-npm run dev
-```
-
----
-
-## Deployment
-
-### Testnet (HashKey)
+### 2) Configure environment
 
 ```bash
 cp .env.example .env
+```
+
+Fill the variables you need for your target flow (local test, dashboard AI, or testnet deploy).
+
+### 3) Compile contracts
+
+```bash
+npm run contracts:compile
+```
+
+### 4) Run tests
+
+```bash
+npm run contracts:test
+```
+
+### 5) Start frontend
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000`.
+
+## Deployment
+
+### Local network
+
+```bash
+npm run contracts:deploy:local
+```
+
+### HashKey testnet
+
+```bash
 npm run contracts:deploy:hashkey
 ```
 
-Contract addresses are written to `deployments/<chain-id>.json` and consumed by the frontend and indexer automatically.
+After deploy, manifest is saved to:
 
-### Runtime Environment (Strategy + Proofs)
+- `deployments/<chainId>.json`
 
-Set the following values in your `.env` file for live execution:
+This file includes addresses for token, vault, verifier stack, gateway, passport, and pool adapters.
 
+## Run the End-to-End Scenario
+
+The e2e script performs:
+
+1. Mint + approve asset token
+2. Deposit into vault
+3. Run strategy tick
+4. Build proof payload
+5. Execute guarded rebalance on-chain
+
+Run it with Hardhat:
+
+```bash
+npx hardhat run scripts/e2e.ts --network hardhat
+```
+
+For deployed networks, switch `--network` and ensure the matching `deployments/<chainId>.json` exists.
+
+## Environment Variables
+
+Baseline vars are documented in `.env.example`.
+
+Most-used groups:
+
+### Deployment
+- `HASHKEY_RPC_URL`
+- `DEPLOYER_PRIVATE_KEY`
+- `POLICY_UPDATER_ADDRESS`
+- `PROOF_SIGNER_ADDRESS`
+- `PASSPORT_OWNER_ADDRESS`
+- `INITIAL_MINT_WEI`
+
+### Strategy execution worker
 - `STRATEGY_RPC_URL`
 - `STRATEGY_EXECUTOR_PRIVATE_KEY`
 - `ADAPTIVE_VAULT_ADDRESS`
+
+### Proof generation fallback
 - `SAFETY_PROVER_PRIVATE_KEY`
-- `USE_ECDSA_PROOF_FALLBACK` (optional, defaults to `false`)
+- `USE_ECDSA_PROOF_FALLBACK`
 
-The strategy worker submits real `rebalance` transactions through `EvmVaultExecutor`.
+### AI integrations
+- `NVIDIA_API_KEY` (used by dashboard assistant and strategy suggestion)
+- `GEMINI_API_KEY` (reserved for extended integrations)
 
-For proof verification, deployment now includes:
+## Testing
 
-- `Groth16Verifier` generated from the Circom circuit.
-- `Groth16SafetyProofVerifier` adapter implementing `verify(bytes32,bytes)`.
-- `PositionSafetyGateway` pointed at the Groth16 adapter.
+Core test files:
 
-`SafetyProofVerifier` (ECDSA-based) is also deployed as a fallback verifier contract.
+- `test/strategyIntegration.ts`
+  - validates strategy-to-vault integration
+  - validates slippage, max delta, health factor, and stale oracle rejection paths
+- `test/positionSafetyGateway.js`
+  - validates gateway acceptance/rejection behavior
+- `test/groth16SafetyProofVerifier.js`
+  - validates real Groth16 payload path and tamper rejection
 
-To submit a Groth16 proof through the gateway, encode generated proof artifacts into the gateway payload bytes:
+Run all:
 
 ```bash
-npm run zk:encode-payload -- circuits/artifacts/proof/proof.json circuits/artifacts/proof/public.json 0x<signalHash>
+npm run contracts:test
 ```
 
----
+## Current Network Notes
 
-## Risk Model (MVP)
-
-The strategy engine computes a risk score as a weighted combination of two signals:
-
-| Signal | Weight | Source |
-|---|---|---|
-| 30-day price volatility | 60% | Price feed (Chainlink / Pyth) |
-| Protocol utilization rate | 40% | On-chain read |
-
-**Risk classes:**
-
-| Score | Class | Action |
-|---|---|---|
-| 0 – 30 | Low | Hold current allocation |
-| 31 – 60 | Medium | Reduce risky allocation by up to 10% |
-| 61 – 100 | High | Reduce risky allocation by up to 20%, trigger proof prompt |
-
-All rebalance instructions are passed through the policy executor before any on-chain action is taken.
-
----
-
-## Security Considerations
-
-- **Oracle risk** — price feed manipulation is mitigated by requiring freshness checks (max staleness: 60 seconds) before any rebalance executes.
-- **ERC-4626 inflation attack** — mitigated by using OpenZeppelin's ERC-4626 implementation with virtual shares offset.
-- **Strategy engine compromise** — the policy executor enforces bounds regardless of strategy engine output. A compromised or malfunctioning strategy engine cannot execute unsafe rebalances.
-- **No upgradeability in MVP** — contracts are immutable. An upgrade path will be designed for v2 with a timelock.
-
----
+- HashKey testnet chain ID is configured as `133` in frontend provider config.
+- Current frontend contract addresses are hardcoded in `src/app/lib/contracts.ts`.
+- Explorer links in the UI target `https://testnet-explorer.hsk.xyz`.
 
 ## Roadmap
 
-### Phase 1 — MVP (current)
-Vault, policy executor, rule-based strategy engine, ZK health proof, dashboard.
+### Phase 1
+- Guarded vault execution
+- Strategy scoring and policy engine
+- Groth16 proof verification path
+- Dashboard with wallet actions and proof submission
 
-### Phase 2 — Differentiation
-- ZK-proven model inference (EZKL / Risc Zero)
-- Commit-reveal for strategy recommendations
-- Credit history soulbound token
-- Adversarial simulation engine (stress-test rebalances against historical scenarios)
-
-### Phase 3 — Moat
-- Intent layer with solver network (ERC-7521 aligned)
-- Liquidation insurance pool
-- Private rebalancing via ZK
-
-### Phase 4 — Expansion
-- Cross-chain yield routing (LayerZero / Hyperlane)
-- Undercollateralized lending using on-chain credit history
-- Third-party protocol integrations
-
----
+### Phase 2+
+- Expanded credit-aware routing
+- More protocol connectors and richer optimization logic
+- Stronger proof primitives and policy expressiveness
+- Cross-market and cross-chain execution enhancements
 
 ## License
 
