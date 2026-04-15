@@ -89,11 +89,11 @@ export default async function DashboardHome() {
           </p>
         </section>
 
-        <section className="grid gap-8 lg:grid-cols-3 items-start">
-          <div className="lg:col-span-1 flex flex-col gap-4">
+        <section className="grid gap-8 lg:grid-cols-3 items-stretch">
+          <div className="lg:col-span-1 flex flex-col gap-4 h-full relative">
             <MyPositionCard />
             
-            <div className="grid gap-4 grid-cols-2 sm:grid-cols-2">
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 mt-auto">
               <article className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${!strategyResult.ok ? 'opacity-50 grayscale' : ''}`}>
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500 truncate">Expected APY</p>
                 <p className="mt-3 text-2xl lg:text-3xl font-semibold text-slate-900">
