@@ -7,7 +7,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract VaultAssetToken is ERC20, Ownable {
     error InvalidInput();
 
-    constructor(address initialOwner) ERC20("Adaptive Vault USD", "avUSD") Ownable(initialOwner == address(0) ? msg.sender : initialOwner) {}
+    constructor(address initialOwner) ERC20("ZK HashVault USD", "avUSD") Ownable(initialOwner == address(0) ? msg.sender : initialOwner) {}
 
     function mint(address to, uint256 amount) external onlyOwner {
         if (to == address(0) || amount == 0) {

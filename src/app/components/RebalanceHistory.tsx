@@ -2,7 +2,7 @@
 
 import { useReadContract, useBlockNumber } from "wagmi";
 import { useEffect, useState } from "react";
-import { CONTRACT_ADDRESSES, AdaptiveVaultAbi } from "../lib/contracts";
+import { CONTRACT_ADDRESSES, ZKHashVaultAbi } from "../lib/contracts";
 import { parseAbiItem } from "viem";
 import { usePublicClient } from "wagmi";
 
@@ -27,7 +27,7 @@ export function RebalanceHistory() {
         const fromBlock = currentBlock > 50000n ? currentBlock - 50000n : 0n;
 
         const logs = await publicClient.getLogs({
-          address: CONTRACT_ADDRESSES.AdaptiveVault,
+          address: CONTRACT_ADDRESSES.ZKHashVault,
           event: parseAbiItem("event Rebalanced(uint16 previousPoolABps, uint16 previousPoolBBps, uint16 newPoolABps, uint16 newPoolBBps, uint64 oraclePrice, uint16 slippageBps, uint256 healthFactorWad, uint64 oracleTimestamp)"),
           fromBlock: fromBlock,
           toBlock: "latest"

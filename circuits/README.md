@@ -1,4 +1,4 @@
-# AdaptiveVault Circuits
+# ZKHashVault Circuits
 
 This folder contains the Groth16 circuit flow for position health checks.
 

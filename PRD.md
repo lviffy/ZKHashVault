@@ -1,9 +1,9 @@
 # Product Requirements Document (PRD)
-## Project: AdaptiveVault
+## Project: ZKHashVault
 ## Track: DeFi
 
 ## 1. Product Summary
-AdaptiveVault is an AI-assisted DeFi vault that dynamically adjusts lending and yield strategy based on market and wallet behavior. It aims to improve user returns while reducing liquidation risk through automated rebalancing and policy controls.
+ZKHashVault is an AI-assisted DeFi vault that dynamically adjusts lending and yield strategy based on market and wallet behavior. It aims to improve user returns while reducing liquidation risk through automated rebalancing and policy controls.
 
 ## 2. Problem Statement
 DeFi users struggle to continuously optimize rates, collateral levels, and risk exposure across volatile market conditions. Manual management leads to missed yield opportunities and liquidation events.

@@ -1,4 +1,4 @@
-# AdaptiveVault
+# ZKHashVault
 
 > A yield vault where risk constraints are cryptographically enforced on-chain — not just promised.
 
@@ -6,9 +6,9 @@
 
 ## Overview
 
-AdaptiveVault is an AI-assisted DeFi yield vault that continuously balances return and liquidation risk through policy-driven automation and verifiable risk controls.
+ZKHashVault is an AI-assisted DeFi yield vault that continuously balances return and liquidation risk through policy-driven automation and verifiable risk controls.
 
-Most yield vaults ask users to trust that the protocol is managing risk responsibly. AdaptiveVault removes that assumption. Every rebalance is bounded by on-chain policy constraints. Every position can be proven safe via a ZK proof that any user can submit and verify independently.
+Most yield vaults ask users to trust that the protocol is managing risk responsibly. ZKHashVault removes that assumption. Every rebalance is bounded by on-chain policy constraints. Every position can be proven safe via a ZK proof that any user can submit and verify independently.
 
 ---
 
@@ -33,7 +33,7 @@ This loop is the product. Everything else is infrastructure in support of it.
 
 ## Solution
 
-AdaptiveVault introduces a closed-loop optimization system with cryptographic enforcement at every layer:
+ZKHashVault introduces a closed-loop optimization system with cryptographic enforcement at every layer:
 
 1. Users deposit assets and select a risk profile.
 2. A strategy engine ingests market and portfolio telemetry and computes risk class, target allocations, and rebalance bounds.
@@ -161,7 +161,7 @@ Users generate the proof client-side and submit it via the dashboard. The result
 ## Repository Layout
 
 ```
-adaptivevault/
+zkhashvault/
 ├── contracts/
 │   ├── src/
 │   │   ├── Vault.sol

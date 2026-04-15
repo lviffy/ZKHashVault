@@ -38,7 +38,7 @@ snarkjs groth16 setup \
   "${PTAU_FILE}" \
   "${ARTIFACT_DIR}/${CIRCUIT_NAME}_0000.zkey"
 
-CONTRIBUTION_ENTROPY="${ZKEY_ENTROPY:-adaptive-vault-health-check-$(date +%s)}"
+CONTRIBUTION_ENTROPY="${ZKEY_ENTROPY:-zk-hashvault-health-check-$(date +%s)}"
 
 echo "Contributing to zkey..."
 printf '%s\n' "${CONTRIBUTION_ENTROPY}" | snarkjs zkey contribute \

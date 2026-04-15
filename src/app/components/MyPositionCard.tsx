@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { parseUnits, formatUnits } from "viem";
-import { CONTRACT_ADDRESSES, AdaptiveVaultAbi, VaultAssetTokenAbi, CreditScorePassportAbi } from "../lib/contracts";
+import { CONTRACT_ADDRESSES, ZKHashVaultAbi, VaultAssetTokenAbi, CreditScorePassportAbi } from "../lib/contracts";
 
 export function MyPositionCard() {
   const [mounted, setMounted] = useState(false);
@@ -35,8 +35,8 @@ export function MyPositionCard() {
   });
 
   const { data: userVaultBalance, refetch: refetchVaultBalance } = useReadContract({
-    address: CONTRACT_ADDRESSES.AdaptiveVault,
-    abi: AdaptiveVaultAbi,
+    address: CONTRACT_ADDRESSES.ZKHashVault,
+    abi: ZKHashVaultAbi,
     functionName: "shareBalance",
     args: address ? [address] : undefined,
     query: { enabled: !!address },
@@ -46,7 +46,7 @@ export function MyPositionCard() {
     address: CONTRACT_ADDRESSES.VaultAssetToken,
     abi: VaultAssetTokenAbi,
     functionName: "allowance",
-    args: address ? [address, CONTRACT_ADDRESSES.AdaptiveVault] : undefined,
+    args: address ? [address, CONTRACT_ADDRESSES.ZKHashVault] : undefined,
     query: { enabled: !!address },
   });
 
@@ -99,20 +99,20 @@ export function MyPositionCard() {
           address: CONTRACT_ADDRESSES.VaultAssetToken,
           abi: VaultAssetTokenAbi,
           functionName: "approve",
-          args: [CONTRACT_ADDRESSES.AdaptiveVault, amountWei],
+          args: [CONTRACT_ADDRESSES.ZKHashVault, amountWei],
         });
       } else {
         writeDeposit({
-          address: CONTRACT_ADDRESSES.AdaptiveVault,
-          abi: AdaptiveVaultAbi,
+          address: CONTRACT_ADDRESSES.ZKHashVault,
+          abi: ZKHashVaultAbi,
           functionName: "deposit",
           args: [amountWei],
         });
       }
     } else {
       writeWithdraw({
-        address: CONTRACT_ADDRESSES.AdaptiveVault,
-        abi: AdaptiveVaultAbi,
+        address: CONTRACT_ADDRESSES.ZKHashVault,
+        abi: ZKHashVaultAbi,
         functionName: "withdraw",
         args: [amountWei],
       });

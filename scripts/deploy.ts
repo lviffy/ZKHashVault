@@ -15,7 +15,7 @@ type DeploymentManifest = {
   };
   contracts: {
     vaultAssetToken: string;
-    adaptiveVault: string;
+    zkHashVault: string;
     healthCheckGroth16Verifier: string;
     groth16SafetyProofVerifier: string;
     safetyProofVerifierEcdsa: string;
@@ -107,7 +107,7 @@ async function main() {
   // -------------------------------------------------------------
   // VAULT DEPLOYMENT
   // -------------------------------------------------------------
-  const vaultFactory = await hre.ethers.getContractFactory("AdaptiveVault");
+  const vaultFactory = await hre.ethers.getContractFactory("ZKHashVault");
   const vault = await vaultFactory.deploy(
     tokenAddress,
     policyUpdater,
@@ -140,7 +140,7 @@ async function main() {
     },
     contracts: {
       vaultAssetToken: await token.getAddress(),
-      adaptiveVault: await vault.getAddress(),
+      zkHashVault: await vault.getAddress(),
       healthCheckGroth16Verifier: await healthCheckVerifier.getAddress(),
       groth16SafetyProofVerifier: await groth16Adapter.getAddress(),
       safetyProofVerifierEcdsa: await ecdsaVerifier.getAddress(),

@@ -1,4 +1,4 @@
-# AdaptiveVault MVP Plan
+# ZKHashVault MVP Plan
 
 Date: 2026-04-12
 

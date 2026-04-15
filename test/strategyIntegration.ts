@@ -29,7 +29,7 @@ describe("Phase 2 Integration: Strategy Engine -> Vault Execution", function () 
     const poolA = await AdapterFactory.deploy(await token.getAddress(), await protocolA.getAddress());
     const poolB = await AdapterFactory.deploy(await token.getAddress(), await protocolB.getAddress());
 
-    const VaultFactory = await ethers.getContractFactory("AdaptiveVault");
+    const VaultFactory = await ethers.getContractFactory("ZKHashVault");
     const vault = await VaultFactory.deploy(
       await token.getAddress(),
       policyUpdater.address,
@@ -91,7 +91,7 @@ describe("Phase 2 Integration: Strategy Engine -> Vault Execution", function () 
     const signalHash = ethers.keccak256(ethers.toUtf8Bytes("integration-test-signal"));
     const proof = await proofSigner.signMessage(ethers.getBytes(signalHash));
 
-    // 3. Submit instruction to the AdaptiveVault smart contract via the Policy Updater
+    // 3. Submit instruction to the ZKHashVault smart contract via the Policy Updater
     // function rebalance(int256 deltaPoolABps, uint16 slippageBps, uint256 healthFactorWad, bytes32 signalHash, bytes calldata proof)
     await expect(
       vault.connect(policyUpdater).rebalance(

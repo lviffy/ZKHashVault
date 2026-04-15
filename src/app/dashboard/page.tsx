@@ -70,7 +70,7 @@ export default async function DashboardHome() {
       <nav className="mx-auto mb-8 flex w-full max-w-6xl items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-semibold text-emerald-700 hover:opacity-80 transition-opacity">
           <div className="h-4 w-4 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
-          <span className="hidden sm:inline">AdaptiveVault</span>
+          <span className="hidden sm:inline">ZKHashVault</span>
         </Link>
         <div className="flex items-center gap-4 text-xs font-medium text-slate-500">
           <span className="flex items-center gap-1.5"><span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span> Live Engine</span>
@@ -81,7 +81,7 @@ export default async function DashboardHome() {
 
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <section className="rounded-3xl border border-emerald-200 bg-white/80 p-8 shadow-[0_20px_60px_-25px_rgba(16,185,129,0.35)] backdrop-blur">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700">AdaptiveVault Console</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700">ZKHashVault Console</p>
           <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">Strategy Overview</h1>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-700">
             Real-time execution details, credit scoring, and zero-knowledge proofs.

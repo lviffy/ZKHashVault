@@ -21,7 +21,7 @@ interface IComet {
 /**
  * @title CompoundV3Adapter
  * @dev A real yield-generating adapter for Compound V3 (Comet). It exposes the same interface
- * as the IPoolAdapter so it drops perfectly into the `AdaptiveVault`.
+ * as the IPoolAdapter so it drops perfectly into the `ZKHashVault`.
  */
 contract CompoundV3Adapter is IPoolAdapter {
     IERC20Like public immutable asset;

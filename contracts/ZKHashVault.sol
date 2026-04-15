@@ -25,7 +25,7 @@ interface IPoolAdapter {
     function getBalance(address user) external view returns (uint256);
 }
 
-contract AdaptiveVault {
+contract ZKHashVault {
     error Unauthorized();
     error InvalidInput();
     error InsufficientShares();

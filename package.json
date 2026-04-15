@@ -1,5 +1,5 @@
 {
-  "name": "adaptive-vault",
+  "name": "zk-hashvault",
   "version": "0.1.0",
   "private": true,
   "scripts": {

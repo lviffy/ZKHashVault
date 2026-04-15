@@ -1,7 +1,7 @@
 {
   "_format": "hh-sol-artifact-1",
-  "contractName": "AdaptiveVault",
-  "sourceName": "contracts/AdaptiveVault.sol",
+  "contractName": "ZKHashVault",
+  "sourceName": "contracts/ZKHashVault.sol",
   "abi": [
     {
       "inputs": [

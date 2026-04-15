@@ -28,7 +28,7 @@ async function main() {
   
   // 1. Connect to deployed contracts
   const Token = await ethers.getContractAt("VaultAssetToken", manifest.contracts.vaultAssetToken);
-  const Vault = await ethers.getContractAt("AdaptiveVault", manifest.contracts.adaptiveVault);
+  const Vault = await ethers.getContractAt("ZKHashVault", manifest.contracts.zkHashVault);
   
   console.log(`[1/5] Contracts loaded. Vault address: ${await Vault.getAddress()}`);
 

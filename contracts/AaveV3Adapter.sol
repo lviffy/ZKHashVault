@@ -18,7 +18,7 @@ interface IPool {
 /**
  * @title AaveV3Adapter
  * @dev A real yield-generating adapter for Aave V3. It exposes the same interface
- * as the IPoolAdapter so it drops perfectly into the `AdaptiveVault`.
+ * as the IPoolAdapter so it drops perfectly into the `ZKHashVault`.
  */
 contract AaveV3Adapter is IPoolAdapter {
     IERC20Like public immutable asset;

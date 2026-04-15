@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { parseUnits, formatUnits } from "viem";
-import { CONTRACT_ADDRESSES, AdaptiveVaultAbi, VaultAssetTokenAbi } from "../lib/contracts";
+import { CONTRACT_ADDRESSES, ZKHashVaultAbi, VaultAssetTokenAbi } from "../lib/contracts";
 
 export function DepositWithdrawForm() {
   const [mounted, setMounted] = useState(false);
@@ -25,8 +25,8 @@ export function DepositWithdrawForm() {
   });
 
   const { data: userVaultBalance } = useReadContract({
-    address: CONTRACT_ADDRESSES.AdaptiveVault,
-    abi: AdaptiveVaultAbi,
+    address: CONTRACT_ADDRESSES.ZKHashVault,
+    abi: ZKHashVaultAbi,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
     query: { enabled: !!address },
@@ -36,7 +36,7 @@ export function DepositWithdrawForm() {
     address: CONTRACT_ADDRESSES.VaultAssetToken,
     abi: VaultAssetTokenAbi,
     functionName: "allowance",
-    args: address ? [address, CONTRACT_ADDRESSES.AdaptiveVault] : undefined,
+    args: address ? [address, CONTRACT_ADDRESSES.ZKHashVault] : undefined,
     query: { enabled: !!address },
   });
 
@@ -56,20 +56,20 @@ export function DepositWithdrawForm() {
           address: CONTRACT_ADDRESSES.VaultAssetToken,
           abi: VaultAssetTokenAbi,
           functionName: "approve",
-          args: [CONTRACT_ADDRESSES.AdaptiveVault, amountWei],
+          args: [CONTRACT_ADDRESSES.ZKHashVault, amountWei],
         });
       } else {
         writeDeposit({
-          address: CONTRACT_ADDRESSES.AdaptiveVault,
-          abi: AdaptiveVaultAbi,
+          address: CONTRACT_ADDRESSES.ZKHashVault,
+          abi: ZKHashVaultAbi,
           functionName: "deposit",
           args: [amountWei],
         });
       }
     } else {
       writeWithdraw({
-        address: CONTRACT_ADDRESSES.AdaptiveVault,
-        abi: AdaptiveVaultAbi,
+        address: CONTRACT_ADDRESSES.ZKHashVault,
+        abi: ZKHashVaultAbi,
         functionName: "withdraw",
         args: [amountWei],
       });

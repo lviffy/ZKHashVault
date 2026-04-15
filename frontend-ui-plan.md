@@ -1,9 +1,9 @@
-# AdaptiveVault Frontend UI Improvement Plan
+# ZKHashVault Frontend UI Improvement Plan
 
 ## 🎯 The Goal
 The current dashboard is highly technical, exposing raw JSON payloads, complex transaction details, and backend mechanics (ZK proofs, strategy instructions) directly to the user. 
 
-**The new goal** is to make the UI friendly, intuitive, and reassuring for a regular DeFi user, while still highlighting the unique AI and ZK-safety features of AdaptiveVault.
+**The new goal** is to make the UI friendly, intuitive, and reassuring for a regular DeFi user, while still highlighting the unique AI and ZK-safety features of ZKHashVault.
 
 ---
 
@@ -51,7 +51,7 @@ Replace the raw `Safety Proof Payload` JSON.
 *   [x] Hide the `Rebalance Instruction` and `Phase3` raw data under a "Developer Mode" toggle, or remove them entirely for regular users.
 
 ### Phase 2: Build the "My Position" Card
-*   [x] Fetch the user's deposited balance from the `AdaptiveVault` contract.
+*   [x] Fetch the user's deposited balance from the `ZKHashVault` contract.
 *   [x] Create a circular progress or simple score-dial for the Credit Score.
 *   [x] Move the Deposit/Withdraw form into a clean modal or an interactive side-panel next to the balance.
 

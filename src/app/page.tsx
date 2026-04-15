@@ -7,7 +7,7 @@ export default function LandingPage() {
       <nav className="mx-auto flex w-full max-w-7xl items-center justify-between p-6 lg:px-8">
         <div className="flex font-semibold text-emerald-700 items-center gap-2">
           <div className="h-4 w-4 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
-          AdaptiveVault
+          ZKHashVault
         </div>
         <Link 
           href="/dashboard" 
@@ -27,7 +27,7 @@ export default function LandingPage() {
           Smarter yields backed by <span className="text-emerald-600">zero-knowledge</span> certainty.
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-          AdaptiveVault continually monitors market mechanics to balance risk and reward. With real-time on-chain credit scores and Groth16 Snark proofs for position safety, you maintain complete peace of mind.
+          ZKHashVault continually monitors market mechanics to balance risk and reward. With real-time on-chain credit scores and Groth16 Snark proofs for position safety, you maintain complete peace of mind.
         </p>
 
         <div className="mt-10 flex items-center justify-center gap-x-6">

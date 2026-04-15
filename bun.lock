@@ -3,7 +3,7 @@
   "configVersion": 0,
   "workspaces": {
     "": {
-      "name": "adaptive-vault",
+      "name": "zk-hashvault",
       "dependencies": {
         "@openzeppelin/contracts": "^5.4.0",
         "@tanstack/react-query": "^5.99.0",
