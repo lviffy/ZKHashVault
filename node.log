@@ -1,9 +1,0 @@
-WARNING: You are currently using Node.js v25.8.2, which is not supported by Hardhat. This can lead to unexpected behavior. See https://v2.hardhat.org/nodejs-versions
-
-
-◇ injected env (12) from .env // tip: ⌘ enable debugging { debug: true }
-Error: listen EADDRINUSE: address already in use 127.0.0.1:8545
-    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
-    at listenInCluster (node:net:2065:12)
-    at node:net:2274:7
-    at processTicksAndRejections (node:internal/process/task_queues:90:21)
