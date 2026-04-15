@@ -122,41 +122,41 @@ export function MyPositionCard() {
   const isTxPending = isApproving || isDepositing || isWithdrawing || isDepositConfirming || isWithdrawConfirming || isApproveConfirming;
 
   if (!mounted) {
-    return <article className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm animate-pulse h-[400px]"></article>;
+    return <article className="rounded-3xl border border-white/15 bg-white/[0.05] p-8 shadow-sm animate-pulse h-[400px]"></article>;
   }
 
   return (
-    <article className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col h-full">
-      <div className="bg-slate-900 px-8 py-6 text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 translate-x-20 -translate-y-20"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 -translate-x-10 translate-y-10"></div>
+    <article className="rounded-3xl border border-white/15 bg-slate-950/60 shadow-sm overflow-hidden flex flex-col h-full backdrop-blur-xl">
+      <div className="bg-slate-950/90 px-8 py-6 text-white relative overflow-hidden border-b border-white/10">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-teal-400 rounded-full mix-blend-screen filter blur-3xl opacity-20 translate-x-20 -translate-y-20"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-400 rounded-full mix-blend-screen filter blur-3xl opacity-20 -translate-x-10 translate-y-10"></div>
         
-        <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400 relative z-10">My Position</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-300 relative z-10">My Position</h2>
         <div className="mt-4 flex items-end gap-3 relative z-10">
           <p className="text-4xl font-semibold tracking-tight">{displayVaultBalance}</p>
-          <p className="text-lg text-slate-400 mb-1">avUSD</p>
+          <p className="text-lg text-slate-300 mb-1">avUSD</p>
         </div>
         <div className="mt-6 flex gap-6 relative z-10">
           <div>
-            <p className="text-xs text-slate-400 uppercase tracking-widest">Earnings</p>
-            <p className="text-emerald-400 font-medium mt-1">+$0.00</p>
+            <p className="text-xs text-slate-300 uppercase tracking-widest">Earnings</p>
+            <p className="text-emerald-300 font-medium mt-1">+$0.00</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400 uppercase tracking-widest">Credit Score</p>
+            <p className="text-xs text-slate-300 uppercase tracking-widest">Credit Score</p>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-white font-medium">{rawScore}</span>
-              <span className="text-xs text-slate-400">({rawScore > 800 ? "Excellent" : rawScore > 600 ? "Good" : "Fair"})</span>
+              <span className="text-xs text-slate-300">({rawScore > 800 ? "Excellent" : rawScore > 600 ? "Good" : "Fair"})</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="p-8 flex flex-col flex-1 bg-white">
-        <div className="flex rounded-lg bg-slate-100 p-1 mb-6">
+      <div className="p-8 flex flex-col flex-1 bg-slate-950/40">
+        <div className="flex rounded-lg bg-slate-900 p-1 mb-6 border border-white/10">
           <button
             onClick={() => setTab("deposit")}
             className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${
-              tab === "deposit" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-900"
+              tab === "deposit" ? "bg-white/15 text-white shadow-sm" : "text-slate-300 hover:text-white"
             }`}
           >
             Deposit
@@ -164,14 +164,14 @@ export function MyPositionCard() {
           <button
             onClick={() => setTab("withdraw")}
             className={`flex-1 rounded-md py-2 text-sm font-medium transition-all ${
-              tab === "withdraw" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-900"
+              tab === "withdraw" ? "bg-white/15 text-white shadow-sm" : "text-slate-300 hover:text-white"
             }`}
           >
             Withdraw
           </button>
         </div>
 
-        <div className="flex justify-between text-xs text-slate-500 mb-2 font-medium">
+        <div className="flex justify-between text-xs text-slate-300/80 mb-2 font-medium">
           <span>Amount ({tab === "deposit" ? "USDC" : "avUSD"})</span>
           <span>Balance: {tab === "deposit" ? displayAssetBalance : displayVaultBalance}</span>
         </div>
@@ -182,12 +182,12 @@ export function MyPositionCard() {
             placeholder="0.00"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 pl-4 pr-16 py-4 text-2xl font-semibold text-slate-900 outline-none focus:border-emerald-500 disabled:opacity-50 transition-colors"
+            className="w-full rounded-xl border border-white/15 bg-slate-900/70 pl-4 pr-16 py-4 text-2xl font-semibold text-white outline-none focus:border-teal-300 disabled:opacity-50 transition-colors"
             disabled={!address || isTxPending}
           />
           <button 
             onClick={() => setAmount(tab === "deposit" ? displayAssetBalance : displayVaultBalance)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-600 hover:text-emerald-700 uppercase tracking-wider"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-teal-200 hover:text-teal-100 uppercase tracking-wider"
           >
             Max
           </button>
@@ -197,7 +197,7 @@ export function MyPositionCard() {
           <button
             onClick={handleAction}
             disabled={!mounted || !address || !amount || parseFloat(amount) <= 0 || isTxPending}
-            className="w-full rounded-xl bg-emerald-600 py-4 text-sm font-semibold text-white shadow-md shadow-emerald-500/20 hover:bg-emerald-500 disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none transition-all"
+            className="w-full rounded-xl bg-gradient-to-r from-teal-300 to-cyan-300 py-4 text-sm font-semibold text-slate-900 shadow-md shadow-cyan-300/20 hover:opacity-95 disabled:bg-slate-700 disabled:text-slate-400 disabled:shadow-none transition-all"
           >
             {isTxPending ? "Confirming..." : (!mounted || !address)
               ? "Connect Wallet First"

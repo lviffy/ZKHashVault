@@ -1,6 +1,6 @@
 "use client";
 
-import { useReadContract, useBlockNumber } from "wagmi";
+import { useBlockNumber } from "wagmi";
 import { useEffect, useState } from "react";
 import { CONTRACT_ADDRESSES, ZKHashVaultAbi } from "../lib/contracts";
 import { parseAbiItem } from "viem";
@@ -52,12 +52,12 @@ export function RebalanceHistory() {
   }, [publicClient]);
 
   if (loading) {
-    return <div className="animate-pulse h-32 bg-slate-50 rounded-xl" />;
+    return <div className="animate-pulse h-32 bg-white/10 rounded-xl" />;
   }
 
   if (events.length === 0) {
     return (
-      <div className="text-center py-6 text-sm text-slate-500 border border-dashed border-slate-200 rounded-xl">
+      <div className="text-center py-6 text-sm text-slate-300/80 border border-dashed border-white/20 rounded-xl">
         No recent rebalance operations found on-chain.
       </div>
     );
@@ -71,24 +71,24 @@ export function RebalanceHistory() {
           href={`https://testnet-explorer.hsk.xyz/tx/${ev.txHash}`}
           target="_blank"
           rel="noreferrer"
-          className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-slate-300 hover:shadow-sm transition-all bg-white"
+          className="flex items-center justify-between p-3 rounded-xl border border-white/10 hover:border-cyan-200/35 transition-all bg-white/[0.04]"
         >
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-full bg-white/10 text-slate-200 flex items-center justify-center">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-900">
+              <p className="text-sm font-medium text-slate-100">
                 Aave {(ev.newPoolABps / 100).toFixed(0)}% / Compound {(ev.newPoolBBps / 100).toFixed(0)}%
               </p>
-              <p className="text-xs text-slate-500 font-mono">
+              <p className="text-xs text-slate-300/70 font-mono">
                 Block {ev.blockNumber} • HF: {ev.healthFactor}x
               </p>
             </div>
           </div>
-          <div className="text-emerald-600">
+          <div className="text-emerald-300">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
