@@ -2,16 +2,14 @@ import AdaptiveVaultJson from "../abi/AdaptiveVault.json";
 import VaultAssetTokenJson from "../abi/VaultAssetToken.json";
 import CreditScorePassportJson from "../abi/CreditScorePassport.json";
 
-// Default local addresses from hardhat fallback
+// Deployed addresses on HashKey testnet
 export const CONTRACT_ADDRESSES = {
-  VaultAssetToken: "0x13dbca9bfbf84f2C224989bB4acF279Bfab779b3" as const,
-  AdaptiveVault: "0xe738c3464AA0a2A6D7bedC0918a90eed3601a289" as const,
-  PositionSafetyGateway: "0x1998810A374B095f169F79148741d994545F9470" as const,
-  CreditScorePassport: "0xbC5056D3a5c3505A67fBF6795Da6b52A6e4Ca277" as const,
+  VaultAssetToken: "0x895a0Dc6639AF9dbcB8Bfe6a5De3e0ab172965f4" as const,
+  AdaptiveVault: "0xEC4A4d4c41C09814f7878A71c58D35637f9FecD6" as const,
+  PositionSafetyGateway: "0x3A257b92ab97748B5392Ab6Dc6fa8A2f24E88Fd5" as const,
+  CreditScorePassport: "0x41cE5735511D96a3F6e244f54e613327971026b2" as const,
 };
 
 export const AdaptiveVaultAbi = AdaptiveVaultJson.abi;
 export const VaultAssetTokenAbi = VaultAssetTokenJson.abi;
 export const CreditScorePassportAbi = CreditScorePassportJson.abi;
-
-

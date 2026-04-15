@@ -21,7 +21,9 @@ async function main() {
   }
 
   const manifest = JSON.parse(fs.readFileSync(deploymentPath, "utf8"));
-  const [deployer, user] = await ethers.getSigners();
+  const signers = await ethers.getSigners();
+  const deployer = signers[0];
+  const user = signers.length > 1 ? signers[1] : deployer; // Use deployer as user if only 1 account
   console.log(`Starting E2E vault test with chainId: ${chainId}`);
   
   // 1. Connect to deployed contracts
@@ -43,10 +45,10 @@ async function main() {
   // 3. User deposits into Vault
   console.log(`[3/5] User depositing ${ethers.formatEther(depositAmount)} tokens into vault...`);
   const depositTx = await Vault.connect(user).deposit(depositAmount);
-  await depositTx.wait();
+  const depositReceipt = await depositTx.wait();
   
   const userShares = await Vault.shareBalance(user.address);
-  console.log(`      Received ${ethers.formatEther(userShares)} Vault Shares.`);
+  console.log(`      Received ${ethers.formatEther(userShares)} Vault Shares. (Tx: ${depositReceipt?.hash})`);
 
   console.log(`[4/5] Running Strategy Engine Tick (Simulated AI Risk Adjustment)...`);
   
@@ -94,21 +96,18 @@ async function main() {
   console.log(`[5/5] Generating Cryptographic Proof and Sending Rebalance Transaction...`);
   
   const updaterAddress = manifest.configuration.policyUpdater;
-  await ethers.provider.send("hardhat_impersonateAccount", [updaterAddress]);
-  await ethers.provider.send("hardhat_setBalance", [updaterAddress, "0xDE0B6B3A7640000"]); // Give it some ETH
-  const impersonatedUpdater = await ethers.getSigner(updaterAddress);
+  // Remove impersonate since updater is deployer in Hashkey Testnet
+  const impersonatedUpdater = deployer;
   
   const signalHash = ethers.keccak256(ethers.toUtf8Bytes("live-e2e-signal"));
   
   const proof = await buildGroth16SafetyProofPayload(signalHash);
 
-  await ethers.provider.send("hardhat_setBalance", [updaterAddress, "0xDE0B6B3A7640000"]); 
-  
   // Refresh price feed so OracleStale doesn't trigger
   const hkOracle = await ethers.getContractAt("HashKeyPriceOracle", priceFeedAddress);
   await (hkOracle.connect(deployer) as any).updateAnswer(currentPrice);
 
-  // Set the staleness dynamically if we want using hardhat overrides, but we bypass it here.
+  // Send rebalance
   const rebalanceTx = await Vault.connect(impersonatedUpdater).rebalance(
     instruction!.deltaPoolABps,
     instruction!.slippageBps,
@@ -129,7 +128,7 @@ async function main() {
 
   if (rebalanceEvent) {
      const decoded = Vault.interface.parseLog(rebalanceEvent as any);
-     console.log(`\n✅ SUCCESS! Vault Rebalanced On-Chain!`);
+     console.log(`\n✅ SUCCESS! Vault Rebalanced On-Chain! (Tx: ${receipt?.hash})`);
      console.log(`      Old Allocation: Pool A: ${decoded?.args[0]} | Pool B: ${decoded?.args[1]}`);
      console.log(`      New Allocation: Pool A: ${decoded?.args[2]} | Pool B: ${decoded?.args[3]}`);
   }

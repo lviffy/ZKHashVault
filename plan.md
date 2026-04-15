@@ -42,7 +42,7 @@ Ship a verifiable risk-constrained vault flow where strategy output is bounded b
 - [x] On-chain gateway verification flow tested with real verifier logic.
 - [x] Circom health-check circuit and Groth16 setup/prove scripts added.
 - [x] Generated proving artifacts and integrated generated Groth16 verifier into contracts + tests.
-- [ ] Deploy Groth16 verifier stack on target network and update production deployment manifest.
+- [x] Deploy Groth16 verifier stack on target network and update production deployment manifest.
 
 ### Phase 4: Frontend + Integration
 - [x] Dashboard surfaces strategy output and proof payload.
@@ -53,9 +53,9 @@ Ship a verifiable risk-constrained vault flow where strategy output is bounded b
 ### Phase 5: Demo Hardening
 - [x] Full e2e script on testnet: deposit -> rebalance -> verify proof.
 - [x] Failure-mode handling for stale oracle / policy rejection in UI.
-- [ ] Demo evidence pack (tx hashes, screenshots, short runbook).
+- [x] Demo evidence pack (tx hashes, screenshots, short runbook).
 
 ## Immediate Next Steps
-1. Wire frontend actions to deployed contracts (deposit, withdraw, verify proof).
-2. Add integration tests that assert strategy instruction fields match vault guardrails.
-3. Deploy Groth16 verifier stack on target network and commit `deployments/<chain-id>.json`.
+1. [Done] Wire frontend actions to deployed contracts (deposit, withdraw, verify proof).
+2. [Done] Add integration tests that assert strategy instruction fields match vault guardrails.
+3. [Done] Deploy Groth16 verifier stack on target network and commit `deployments/<chain-id>.json`.
